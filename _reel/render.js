@@ -20,7 +20,7 @@ const server = http.createServer((req, res) => {
 (async () => {
   await new Promise(r => server.listen(0, r));
   const port = server.address().port;
-  const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-sandbox', '--force-color-profile=srgb'] });
+  const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, protocolTimeout: 600000, args: ['--no-sandbox', '--force-color-profile=srgb'] });
   const page = await browser.newPage();
   await page.setViewport({ width: +W, height: +H, deviceScaleFactor: 1 });
   page.on('pageerror', e => console.log('PAGE ERROR', e.message));
@@ -30,7 +30,7 @@ const server = http.createServer((req, res) => {
   if (process.env.NOTEXT) await page.evaluate(() => { window.NOTEXT = true; });
 
   const grab = async t => {
-    const d = await page.evaluate(t => { window.render(t); return document.getElementById('c').toDataURL('image/jpeg', 0.93); }, t);
+    const d = await page.evaluate(t => { window.render(t); return document.getElementById('c').toDataURL('image/jpeg', 1.0); }, t);   // 프레임은 JPEG 100%(사실상 무손실)로 넘김
     return Buffer.from(d.split(',')[1], 'base64');
   };
 
@@ -39,9 +39,11 @@ const server = http.createServer((req, res) => {
     for (const s of out.slice(9).split(',')) fs.writeFileSync(path.join(dir, `${W}x${H}_${s}.jpg`), await grab(+s));
     console.log('stills done');
   } else {
+    const big = (+W) * (+H) > 2300000;   // 4K 등 → H.264 레벨 5.1
     const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', '30', '-c:v', 'mjpeg', '-i', '-',
-      '-vf', 'scale=in_range=pc:out_range=tv,format=yuv420p', '-color_range', 'tv', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709',
-      '-c:v', 'libx264', '-preset', 'slow', '-crf', process.env.CRF || '23', '-pix_fmt', 'yuv420p', '-profile:v', 'high',
+      '-vf', 'scale=in_range=pc:out_range=tv:flags=lanczos+accurate_rnd+full_chroma_int,format=yuv420p', '-color_range', 'tv', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709',
+      '-c:v', 'libx264', '-preset', process.env.PRESET || 'slow', '-tune', 'film', '-crf', process.env.CRF || '18',
+      '-x264-params', 'aq-mode=3:aq-strength=0.9', '-pix_fmt', 'yuv420p', '-profile:v', 'high', '-level:v', big ? '5.1' : '4.2',
       '-movflags', '+faststart', '-an', out], { stdio: ['pipe', 'inherit', 'inherit'] });
     const t0 = Date.now();
     for (let f = 0; f < 450; f++) {

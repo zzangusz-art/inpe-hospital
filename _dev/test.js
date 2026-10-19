@@ -33,7 +33,7 @@ const PAGES = ['index', 'hospital-fabric', 'hospital-floor', 'postpartum', 'pric
   const d = await mk(1440, 900);
   await d.goto(BASE, { waitUntil: 'networkidle2' }); await sleep(2500);
   let st = await d.evaluate(() => { const v = document.querySelector('.reel video'); return { t: v.currentTime, paused: v.paused, src: v.currentSrc, cls: document.querySelector('.reel').className }; });
-  ok('쇼릴 자동재생 · 데스크톱 720p', st.t > 0.5 && !st.paused && /hospital-reel-720p/.test(st.src) && !/is-done/.test(st.cls), JSON.stringify(st));
+  ok('쇼릴 자동재생 · 1440px 화면 1080p', st.t > 0.5 && !st.paused && /hospital-reel-1080p/.test(st.src) && !/is-done/.test(st.cls), JSON.stringify(st));
   await shot(d, '00_reel_playing');
   await d.click('.reel__skip'); await sleep(1400);
   st = await d.evaluate(() => ({ done: document.querySelector('.reel').classList.contains('is-done'), on: [...document.querySelectorAll('.chapter')].map(c => c.classList.contains('is-on')) }));
@@ -45,8 +45,8 @@ const PAGES = ['index', 'hospital-fabric', 'hospital-floor', 'postpartum', 'pric
     st = await d.evaluate(() => [...document.querySelectorAll('.chapter')].map(c => c.classList.contains('is-on')));
     ok('스크롤 ' + p * 100 + '% → ' + (i + 1) + '챕터', st[i], JSON.stringify(st));
   }
-  st = await d.evaluate(() => ({ ref: document.querySelectorAll('.ref').length, own: document.querySelectorAll('.own').length, spaces: document.querySelectorAll('#spaces .space').length, stockNoBadge: [...document.querySelectorAll('main img[src*="/stock/"]')].filter(i => !i.closest('.ref') && !i.closest('.reel')).length }));
-  ok('홈: 참고 이미지 표시(.ref) · 인프 현장 표시(.own) · 공간 갤러리 7곳', st.ref >= 14 && st.own >= 2 && st.spaces === 7 && st.stockNoBadge === 0, JSON.stringify(st));
+  st = await d.evaluate(() => ({ own: document.querySelectorAll('.own').length, spaces: document.querySelectorAll('#spaces .space').length, stock: document.querySelectorAll('main img[src*="/stock/"]').length, refText: (document.body.innerText.match(/참고 이미지/g) || []).length }));
+  ok('홈: 병원 사진 · 인프 현장 표시 · 공간 갤러리 7곳 · 참고 이미지 문구 없음', st.stock >= 14 && st.own >= 2 && st.spaces === 7 && st.refText === 0, JSON.stringify(st));
   for (const [id, n] of [['what', '04_what'], ['spaces', '04b_spaces'], ['problems', '05_problems'], ['plans', '06_plans'], ['ops', '08_ops'], ['safe', '10_safe'], ['proof', '12_proof'], ['trust', '15_trust'], ['how', '16_how'], ['area', '17_area']]) await view(d, '#' + id, n);
   await view(d, '#plans .tables', '07_plans_tables', -120);
   await view(d, '.sched', '09_sched', -100);
@@ -151,11 +151,19 @@ const PAGES = ['index', 'hospital-fabric', 'hospital-floor', 'postpartum', 'pric
   st = await d.evaluate(() => [...document.querySelectorAll('#trust .stat b span')].map(s => parseFloat(getComputedStyle(s).fontSize)));
   ok('숫자 크기 40px 이상', st.length === 4 && st.every(x => x >= 40), st.join(','));
 
+  /* ---------- 1920 화면 → 4K ---------- */
+  const big = await mk(1920, 1080);
+  await big.goto(BASE, { waitUntil: 'networkidle2' }); await sleep(3500);
+  st = await big.evaluate(() => { const v = document.querySelector('.reel video'); return { t: v.currentTime, src: v.currentSrc, w: v.videoWidth, h: v.videoHeight }; });
+  ok('1920 화면 → 4K 영상 재생(3840x2160)', /hospital-reel-4k/.test(st.src) && st.w === 3840 && st.h === 2160 && st.t > 0.3, JSON.stringify(st));
+  await shot(big, '00b_reel_4k'); await big.close();
+
   /* ---------- 모바일 ---------- */
   const m = await mk(390, 844, true);
   await m.goto(BASE, { waitUntil: 'networkidle2' }); await sleep(2500);
   st = await m.evaluate(() => document.querySelector('.reel video').currentSrc);
   ok('모바일 세로 영상 선택', /hospital-reel-mobile/.test(st), st);
+  ok('모바일 영상 1080x2280', await m.evaluate(() => { const v = document.querySelector('.reel video'); return v.videoWidth === 1080 && v.videoHeight === 2280; }));
   await shot(m, 'm00_reel');
   await m.evaluate(() => document.querySelector('.reel__skip').click()); await sleep(1300);
   await shot(m, 'm01_hero');
@@ -184,8 +192,8 @@ const PAGES = ['index', 'hospital-fabric', 'hospital-floor', 'postpartum', 'pric
           canon: (document.querySelector('link[rel=canonical]') || {}).href, title: document.title, imgs: [...document.images].filter(i => i.complete && i.naturalWidth === 0 && i.getAttribute('src') && !/^data:/.test(i.getAttribute('src'))).map(i => i.getAttribute('src')) };
       });
       if (!mob) {
-        const badge = await s.evaluate(() => ({ noBadge: [...document.querySelectorAll('main img[src*="/stock/"]')].filter(i => !i.closest('.ref') && !(i.closest('.page-hero__bg') && document.querySelector('.page-hero__note')) && !(i.closest('.reel') && document.querySelector('.reel__note'))).length, credits: document.querySelectorAll('.credits li').length }));
-        ok(p + ' 참고 이미지에 표시 누락 없음', badge.noBadge === 0, JSON.stringify(badge));
+        const badge = await s.evaluate(() => ({ refText: (document.body.innerText.match(/참고 이미지/g) || []).length + [...document.images].filter(i => /참고 이미지/.test(i.alt)).length, credits: document.querySelectorAll('.credits li').length }));
+        ok(p + ' 참고 이미지 문구 없음(본문·alt)', badge.refText === 0, JSON.stringify(badge));
         if (p === 'about') ok('about 사진 출처 목록', badge.credits >= 20, 'credits ' + badge.credits);
         await shot(s, tag + p, true);
         ok(p + ' 로드 · JSON-LD · 제목', !/ERR/.test(info.ld) && info.h1 && info.title, info.ld.slice(0, 120));

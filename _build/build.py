@@ -199,7 +199,7 @@ def build():
     qf, calc = rd('partials/quote-form.html'), rd('partials/calc.html')
     # 쇼릴 영상: 파일이 있을 때만 연결 (없으면 사진 챕터만 보이는 정적 히어로)
     has_reel = os.path.exists(os.path.join(ROOT, 'assets/video/hospital-reel-1080p.mp4'))
-    reel_attrs = ('\n        data-src1080="assets/video/hospital-reel-1080p.mp4" data-src720="assets/video/hospital-reel-720p.mp4" data-src-mobile="assets/video/hospital-reel-mobile.mp4"'
+    reel_attrs = ('\n        data-src4k="assets/video/hospital-reel-4k.mp4" data-src1080="assets/video/hospital-reel-1080p.mp4" data-src-mobile="assets/video/hospital-reel-mobile.mp4"'
                   '\n        data-poster-desktop="assets/video/poster-desktop.jpg" data-poster-mobile="assets/video/poster-mobile.jpg"') if has_reel else ''
     reps_common = {
         '{{calc}}': calc, '{{quote_form_inline}}': qf.replace('{{fid}}', 'qi'),

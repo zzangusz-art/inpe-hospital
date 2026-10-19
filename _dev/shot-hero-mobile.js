@@ -9,7 +9,7 @@ const puppeteer = require(PUP);
     await p.setViewport({ width: w, height: h, isMobile: true, hasTouch: true });
     await p.goto('http://127.0.0.1:5179/', { waitUntil: 'networkidle2' }); await new Promise(r => setTimeout(r, 1500));
     await p.evaluate(() => document.querySelector('.reel__skip').click()); await new Promise(r => setTimeout(r, 2500));
-    const boxes = await p.evaluate(() => ['.reel__trust', '.reel__replay', '.reel__note', '.reel__scroll', '.reel__cta'].map(s => { const r = document.querySelector(s).getBoundingClientRect(); return s + ' ' + [r.left, r.top, r.right, r.bottom].map(Math.round).join(','); }));
+    const boxes = await p.evaluate(() => ['.reel__trust', '.reel__replay', '.reel__scroll', '.reel__cta'].map(s => { const r = document.querySelector(s).getBoundingClientRect(); return s + ' ' + [r.left, r.top, r.right, r.bottom].map(Math.round).join(','); }));
     console.log(n, JSON.stringify(boxes));
     await p.screenshot({ path: path.join(__dirname, 'shots', n + '.jpg'), type: 'jpeg', quality: 75 });
     await p.close();

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """공유용 OG 이미지(1200x630) 생성: python _build/make_og.py
-배경은 참고 이미지(병실), 글자는 Noto Sans KR 가변 폰트(Windows 기본 설치본)"""
+배경은 Unsplash 병실 사진, 글자는 Noto Sans KR 가변 폰트(Windows 기본 설치본)"""
 import os
 from PIL import Image, ImageDraw, ImageFont
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -33,6 +33,5 @@ d.text((80, 270), '병원·산후조리원 청소', font=font(68, 900), fill='wh
 d.text((82, 362), '정기청소 | 병상 매트리스·대기실 소파 | 바닥 청소·코팅', font=font(25, 500), fill=(220, 220, 220))
 d.text((82, 404), '야간·주말 구역 분할 · 월간 작업 리포트', font=font(25, 500), fill=(170, 170, 170))
 d.text((82, 470), '0507-1314-5792  ·  현장 실측 무료', font=font(26, 700), fill=(255, 90, 0))
-d.text((W - 24, H - 18), '참고 이미지', font=font(14, 500), fill=(200, 200, 200), anchor='rs')
 og.save(os.path.join(IMG, 'og-hospital.jpg'), quality=88)
 print('og-hospital.jpg', os.path.getsize(os.path.join(IMG, 'og-hospital.jpg')) // 1024, 'KB')

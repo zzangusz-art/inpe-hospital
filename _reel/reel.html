@@ -13,11 +13,12 @@
    - render.js 가 0~449 프레임을 돌며 캔버스를 캡처 → ffmpeg 로 mp4 인코딩
    - ?w=1920&h=1080 (데스크톱) / ?w=720&h=1520 (모바일)
    - 장면: 병실 → 다인 병실 → 대기실 소파 → 야간 복도 → 엔드 카드. 느린 줌 + 크로스페이드만 사용 (컷·번쩍임·글리치 없음)
-   - 공간 사진은 Unsplash 참고 이미지라 화면 오른쪽 아래에 '참고 이미지'를 표시 */
+   - 공간 사진은 Unsplash 라이선스 이미지 (출처는 사이트 회사 소개 #credits) */
 const P = new URLSearchParams(location.search);
 const W = +P.get('w') || 1920, H = +P.get('h') || 1080, DUR = 15, FPS = 30;
 const c = document.getElementById('c'); c.width = W; c.height = H;
 const x = c.getContext('2d');
+x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
 const PORT = H > W;
 const U = Math.min(W, H) / 1080;
 /* 세이프 영역: 16:10 노트북 · 19.5:9 폰에서 cover 크롭돼도 글자가 잘리지 않도록 */
@@ -57,10 +58,10 @@ function txt(s, px, py, o = {}) {
 /* ---------- 장면 정의 ----------
    [이미지, 시작, 끝, 초점x, 초점y, 줌 시작, 줌 끝, 문구 {eb, l1, l2, sub}] */
 const SC = [
-  ['hosp-room-warm', 0.0, 3.8, .55, .5, 1.12, 1.03, { eb: '병원 · 산후조리원 청소', l1: '환자가 눕는 자리는', l2: '닦는 걸로는 부족합니다', sub: '' }],
-  ['hosp-ward-3beds', 3.0, 7.0, .5, .55, 1.03, 1.11, { eb: '01  병상 매트리스', l1: '커버 아래 본체까지', l2: '', sub: '건식 흡입부터 순서대로, 비는 병상부터 차례로' }],
-  ['clinic-waiting-sofa', 6.2, 10.2, .45, .55, 1.12, 1.03, { eb: '02  대기실 소파', l1: '하루 수십 명이 앉는 소파', l2: '', sub: '표면을 닦는 대신 섬유 속 오염을 뽑아냅니다' }],
-  ['hosp-corridor-night', 9.4, 13.2, .5, .62, 1.04, 1.12, { eb: '03  진료가 끝난 뒤', l1: '야간 · 주말에', l2: '구역을 나눠 들어갑니다', sub: '작업 전후 기록은 매달 리포트로 드립니다' }],
+  ['hosp-room-warm', 0.0, 3.8, .55, .5, 1.07, 1.01, { eb: '병원 · 산후조리원 청소', l1: '환자가 눕는 자리는', l2: '닦는 걸로는 부족합니다', sub: '' }],
+  ['hosp-ward-3beds', 3.0, 7.0, .5, .55, 1.01, 1.07, { eb: '01  병상 매트리스', l1: '커버 아래 본체까지', l2: '', sub: '건식 흡입부터 순서대로, 비는 병상부터 차례로' }],
+  ['clinic-waiting-sofa', 6.2, 10.2, .45, .55, 1.07, 1.01, { eb: '02  대기실 소파', l1: '하루 수십 명이 앉는 소파', l2: '', sub: '표면을 닦는 대신 섬유 속 오염을 뽑아냅니다' }],
+  ['hosp-corridor-night', 9.4, 13.2, .5, .62, 1.00, 1.05, { eb: '03  진료가 끝난 뒤', l1: '야간 · 주말에', l2: '구역을 나눠 들어갑니다', sub: '작업 전후 기록은 매달 리포트로 드립니다' }],
 ];
 const XF = 0.8;          // 크로스페이드 길이
 const END = 12.4;        // 엔드 카드 시작
@@ -129,12 +130,22 @@ function hud(t) {
   if (a <= 0) return;
   x.save(); x.globalAlpha = a;
   txt('인프 · 병원 · 산후조리원 청소', SX, SY + 10 * U, { size: 17 * U, w: 600, color: 'rgba(255,255,255,.6)', ls: 2 * U });
-  txt('참고 이미지', W - SX, H - SY - 18 * U, { size: 15 * U, w: 600, color: 'rgba(255,255,255,.55)', align: 'right', ls: 1 * U });
   const py = H - SY;
   x.fillStyle = 'rgba(255,255,255,.18)'; x.fillRect(SX, py, W - SX * 2, 1.5 * U);
   x.fillStyle = 'rgba(255,255,255,.7)'; x.fillRect(SX, py, (W - SX * 2) * (t / DUR), 1.5 * U);
   x.restore();
 }
+
+/* ---------- 디더: 어두운 그라데이션의 계단(밴딩) 방지. 프레임마다 바뀌지 않는 고정 패턴이라 압축 부담이 적음 ---------- */
+let DPAT = null;
+function buildDither() {
+  const g = document.createElement('canvas'); g.width = g.height = 256;
+  const gx = g.getContext('2d'), d = gx.createImageData(256, 256);
+  let seed = 1234567; const r = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  for (let i = 0; i < d.data.length; i += 4) { const v = 128 + (r() + r() - 1) * 40; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; }
+  gx.putImageData(d, 0, 0); DPAT = x.createPattern(g, 'repeat');
+}
+function dither() { x.save(); x.globalAlpha = .05; x.globalCompositeOperation = 'overlay'; x.fillStyle = DPAT; x.fillRect(0, 0, W, H); x.restore(); }
 
 /* ---------- main ---------- */
 window.render = function (t) {
@@ -146,14 +157,16 @@ window.render = function (t) {
   const vg = x.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .4, W / 2, H / 2, Math.hypot(W, H) * .62);
   vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.28)');
   x.fillStyle = vg; x.fillRect(0, 0, W, H);
+  dither();
   hud(t);
 };
 
 (async function boot() {
   const f = new FontFace('NK', 'url(NotoSansKR-VF.ttf)', { weight: '100 900' });
   await f.load(); document.fonts.add(f);
-  await Promise.all(NAMES.map(n => new Promise((res, rej) => { const i = new Image(); i.onload = () => { IMG[n] = i; res(); }; i.onerror = () => rej(n); i.src = '../assets/img/stock/' + n + '.jpg'; })));
+  await Promise.all(NAMES.map(n => new Promise((res, rej) => { const i = new Image(); i.onload = () => { IMG[n] = i; res(); }; i.onerror = () => { if (i.dataset.fb) rej(n); else { i.dataset.fb = 1; console.log('원본 없음 → 웹용 사진 사용: ' + n); i.src = '../assets/img/stock/' + n + '.jpg'; } }; i.src = 'src/' + n + '.jpg'; })));
   await new Promise((res, rej) => { const i = new Image(); i.onload = () => { IMG.logo = i; res(); }; i.onerror = rej; i.src = '../assets/img/logo-512.png'; });
+  buildDither();
   window.render(+(P.get('t') || 0));
   window.READY = true;
 })();

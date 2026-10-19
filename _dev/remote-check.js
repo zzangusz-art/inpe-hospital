@@ -42,7 +42,7 @@ const res = []; const ok = (n, c, i = '') => res.push([c ? 'PASS' : 'FAIL', n, i
     ok('페이지 ' + p, r && r.status() === 200 && !/ERR|있음!/.test(extra), (r ? r.status() : 'x') + ' ' + extra);
   }
   await pg.close();
-  for (const p of ['llms.txt', 'sitemap.xml', 'robots.txt', 'assets/video/hospital-reel-1080p.mp4', 'assets/video/hospital-reel-720p.mp4', 'assets/video/hospital-reel-mobile.mp4', 'assets/img/og-hospital.jpg', 'assets/img/clients.png', 'assets/js/app.js', 'assets/css/style.css']) {
+  for (const p of ['llms.txt', 'sitemap.xml', 'robots.txt', 'assets/video/hospital-reel-4k.mp4', 'assets/video/hospital-reel-1080p.mp4', 'assets/video/hospital-reel-mobile.mp4', 'assets/img/og-hospital.jpg', 'assets/img/clients.png', 'assets/js/app.js', 'assets/css/style.css']) {
     const r = await fetch(BASE + p, { method: 'HEAD' }).catch(() => null);
     ok('파일 ' + p, r && r.status === 200, r ? r.status + ' ' + r.headers.get('content-type') + ' ' + Math.round((+r.headers.get('content-length') || 0) / 1024) + 'KB' : 'x');
   }

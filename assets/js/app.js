@@ -197,8 +197,10 @@
     var portrait = window.innerHeight > window.innerWidth * 1.05;
     var conn = navigator.connection || {};
     var saveData = !!conn.saveData || /2g/.test(conn.effectiveType || '');
-    var big = window.innerWidth * (window.devicePixelRatio || 1) >= 2200;
-    var src = portrait ? v.dataset.srcMobile : (big && !saveData ? v.dataset.src1080 : v.dataset.src720);
+    /* 화면 가로 실제 픽셀 1600 이상이면 4K, 작거나 회선이 느리면 1080p, 세로 화면은 모바일(1080x2280) */
+    var px = window.innerWidth * (window.devicePixelRatio || 1);
+    var slow = /(^|-)(2g|3g)$/.test(conn.effectiveType || '') || (conn.downlink && conn.downlink < 5);
+    var src = portrait ? v.dataset.srcMobile : (px >= 1600 && !slow && v.dataset.src4k ? v.dataset.src4k : v.dataset.src1080);
     var pst = portrait ? v.dataset.posterMobile : v.dataset.posterDesktop;
     if (poster && pst) poster.src = pst;
     var done = false, cur = -1;
