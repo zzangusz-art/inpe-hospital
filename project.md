@@ -44,7 +44,7 @@
 - GitHub 저장소: https://github.com/zzangusz-art/inpe-hospital (public, main 브랜치 루트 → GitHub Pages, 인프케어와 같은 방식)
 - 미리보기 주소: https://zzangusz-art.github.io/inpe-hospital/ — github.io에서 열릴 때만 noindex 자동 부착, canonical은 정식 주소(inpe.kr/hospital/)
 - 저장소 제외: `_reel` 폰트 · node_modules · stills, `_dev/shots`, `_dev/mock-leads.json`, `.claude/`
-- 배포 점검: `node _dev/remote-check.js <주소>`
+- 배포 점검: `node _dev/remote-check.js <주소>` → 23/23 (쇼릴 재생 · noindex · canonical · DB 미연결 시 문자 안내 · 계산기 · 6페이지 · 영상·이미지·llms.txt 등 파일 · 모바일 세로 영상 · 404/스크립트 오류 없음)
 - 상담 DB(LEAD_ENDPOINT) 미연결 상태라 미리보기에서 신청하면 문자 전송 안내로 넘어감
 
 ## 미완료 · 확인 필요 (우선순위 순)

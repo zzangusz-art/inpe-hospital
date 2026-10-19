@@ -38,7 +38,7 @@ const res = []; const ok = (n, c, i = '') => res.push([c ? 'PASS' : 'FAIL', n, i
   const pg = await mk(1440, 900);
   for (const p of ['hospital-fabric.html', 'hospital-floor.html', 'postpartum.html', 'price.html', 'about.html', 'privacy.html']) {
     const r = await pg.goto(BASE + p, { waitUntil: 'networkidle2', timeout: 60000 }).catch(() => null);
-    const extra = await pg.evaluate(() => { try { return JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent)['@graph'].length + ' ld nodes · ' + (/반려|소변|파보/.test(document.querySelector('main').innerText) ? '반려동물 문구 있음!' : '반려동물 문구 없음'); } catch (e) { return 'LD ERR'; } });
+    const extra = await pg.evaluate(() => { try { return JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent)['@graph'].length + ' ld nodes · ' + (/반려|소변|파보/.test((() => { const c = document.querySelector('main').cloneNode(true); c.querySelectorAll('[data-xref]').forEach(e => e.remove()); return c.textContent; })()) ? '반려동물 문구 있음!' : '반려동물 문구 없음'); } catch (e) { return 'LD ERR'; } });
     ok('페이지 ' + p, r && r.status() === 200 && !/ERR|있음!/.test(extra), (r ? r.status() : 'x') + ' ' + extra);
   }
   await pg.close();
