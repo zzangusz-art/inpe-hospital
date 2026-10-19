@@ -90,11 +90,9 @@ def pcards_html():
         out.append(f'<div class="pcard rv" tabindex="0" role="button" aria-label="{cf} 사진, 눌러서 흡입 필터 보기"><div class="pcard__in"><div class="pcard__f"><img src="assets/img/real/thumb/{f}.webp" alt="인프 시공 {cf}" loading="lazy"><span class="pcard__label">{cf}<em>가구</em></span></div><div class="pcard__b"><img src="assets/img/real/thumb/{b}.webp" alt="{cb}: 흡입된 먼지" loading="lazy"><span class="pcard__label">{cb}<em>필터</em></span></div></div></div>')
     return '\n'.join(out)
 
-GALLERY = [
- ('mattress-02', '매트리스 시공'), ('dust-bin-01', '흡입기 집진통에 모인 오염물'), ('sofa-01', '모듈 소파 시공'),
- ('dust-pad-04', '소파 흡입 필터'), ('sofa-under-01', '소파 하부 · 틈새 청소'), ('dust-hand', '필터에 걸러진 먼지'),
- ('sofa-04', '패브릭 소파 시공'), ('dust-pad-05', '매트리스 흡입 필터'), ('fabric-macro', '패브릭 표면 클로즈업'),
- ('dust-bin-02', '집진통 오염물'), ('dust-pad-07', '소파 흡입 필터'), ('team-back', '인프 현장팀'),
+GALLERY = [  # 홈 '현장 기록': 가정집처럼 보이는 가구 사진은 빼고 필터·오염물 기록만
+ ('dust-bin-01', '흡입기 집진통에 모인 오염물'), ('dust-pad-04', '소파 흡입 필터'), ('dust-hand', '필터에 걸러진 먼지'),
+ ('dust-pad-05', '매트리스 흡입 필터'), ('dust-bin-02', '집진통 오염물'), ('dust-pad-07', '소파 흡입 필터'),
 ]
 def gallery_html():
     return '\n'.join(f'<a href="assets/img/real/{n}.jpg" data-lb="field" data-cap="{c}"><img class="sk-img" src="assets/img/real/thumb/{n}.webp" alt="{c}" loading="lazy" width="300" height="300"></a>' for n, c in GALLERY)
@@ -191,6 +189,11 @@ PAGES = [
       kw='인프 개인정보처리방침', faq=None),
 ]
 
+# ---------------------------------------------------------------- 참고 이미지(Unsplash) 크레딧
+STOCK = {k: v for k, v in json.load(open(os.path.join(B, 'stock.json'), encoding='utf-8')).items() if not k.startswith('_')}
+def credits_html(used):
+    return '\n'.join(f'<li>{STOCK[n]["ko"]} — <a href="https://unsplash.com/photos/{STOCK[n]["slug"]}" target="_blank" rel="noopener nofollow">{STOCK[n]["user"]}</a> / Unsplash</li>' for n in STOCK if n in used)
+
 def build():
     head, header, footer = rd('partials/head.html'), rd('partials/header.html'), rd('partials/footer.html')
     qf, calc = rd('partials/quote-form.html'), rd('partials/calc.html')
@@ -204,6 +207,17 @@ def build():
     }
     for k in FAQ:
         reps_common['{{faq_' + k + '}}'] = faq_html(k)
+    # 페이지·영상 렌더러에서 실제로 쓰는 참고 이미지만 크레딧에 올림 + 파일 존재 확인
+    srcs = ''.join(rd('pages/' + p['src']) for p in PAGES) + rd('partials/head.html') + open(os.path.join(ROOT, '_reel', 'reel.html'), encoding='utf-8').read()
+    used = {n for n in STOCK if re.search(r'stock/(thumb/)?' + re.escape(n) + r'\.|[\'"]' + re.escape(n) + r'[\'"]', srcs)}
+    for n in used:
+        for f in ('assets/img/stock/' + n + '.jpg', 'assets/img/stock/thumb/' + n + '.webp'):
+            if not os.path.exists(os.path.join(ROOT, f)):
+                raise SystemExit('참고 이미지 파일 없음: ' + f + ' (python _build/fetch_stock.py)')
+    for m in set(re.findall(r'assets/img/stock/(?:thumb/)?([a-z0-9-]+)\.(?:jpg|webp)', srcs)) - set(STOCK):
+        raise SystemExit('stock.json에 없는 참고 이미지: ' + m)
+    reps_common['{{credits}}'] = credits_html(used)
+    print('참고 이미지 사용', len(used), '/', len(STOCK), '· 미사용', sorted(set(STOCK) - used))
     report = []
     for p in PAGES:
         url = SITE + p['path']
@@ -238,7 +252,7 @@ def build():
         hd = head
         for k, v in {'{{title}}': html.escape(p['title']), '{{desc}}': html.escape(p['desc']), '{{keywords}}': html.escape(p['kw']),
                      '{{og_title}}': html.escape(p['og']), '{{site}}': SITE, '{{path}}': p['path'], '{{page}}': p['page'], '{{jsonld}}': jsonld, '{{ver}}': VER,
-                     '{{preload}}': '<link rel="preload" as="image" href="assets/img/real/mattress-02.jpg">' if p['page'] == 'home' else ''}.items():
+                     '{{preload}}': '<link rel="preload" as="image" href="assets/img/stock/hosp-room-warm.jpg">' if p['page'] == 'home' else ''}.items():
             hd = hd.replace(k, v)
         hdr = header.replace('{{hdr_class}}', '' if p['page'] == 'home' else ' is-solid-always')
         ft = footer.replace('{{quote_form_drawer}}', qf.replace('{{fid}}', 'dq')).replace('{{ver}}', VER)

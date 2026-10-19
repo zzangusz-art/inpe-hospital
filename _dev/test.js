@@ -45,7 +45,9 @@ const PAGES = ['index', 'hospital-fabric', 'hospital-floor', 'postpartum', 'pric
     st = await d.evaluate(() => [...document.querySelectorAll('.chapter')].map(c => c.classList.contains('is-on')));
     ok('스크롤 ' + p * 100 + '% → ' + (i + 1) + '챕터', st[i], JSON.stringify(st));
   }
-  for (const [id, n] of [['what', '04_what'], ['problems', '05_problems'], ['plans', '06_plans'], ['ops', '08_ops'], ['safe', '10_safe'], ['proof', '12_proof'], ['trust', '15_trust'], ['how', '16_how'], ['area', '17_area']]) await view(d, '#' + id, n);
+  st = await d.evaluate(() => ({ ref: document.querySelectorAll('.ref').length, own: document.querySelectorAll('.own').length, spaces: document.querySelectorAll('#spaces .space').length, stockNoBadge: [...document.querySelectorAll('main img[src*="/stock/"]')].filter(i => !i.closest('.ref') && !i.closest('.reel')).length }));
+  ok('홈: 참고 이미지 표시(.ref) · 인프 현장 표시(.own) · 공간 갤러리 7곳', st.ref >= 14 && st.own >= 2 && st.spaces === 7 && st.stockNoBadge === 0, JSON.stringify(st));
+  for (const [id, n] of [['what', '04_what'], ['spaces', '04b_spaces'], ['problems', '05_problems'], ['plans', '06_plans'], ['ops', '08_ops'], ['safe', '10_safe'], ['proof', '12_proof'], ['trust', '15_trust'], ['how', '16_how'], ['area', '17_area']]) await view(d, '#' + id, n);
   await view(d, '#plans .tables', '07_plans_tables', -120);
   await view(d, '.sched', '09_sched', -100);
   // 안심존 탭
@@ -55,8 +57,7 @@ const PAGES = ['index', 'hospital-fabric', 'hospital-floor', 'postpartum', 'pric
   st = await d.evaluate(() => ({ r: !document.getElementById('panel-report').hidden, s: document.getElementById('panel-stand').hidden }));
   ok('안심존 탭 전환', st.r && st.s);
   // 카드 플립 · 라이트박스
-  await view(d, '.pcards', null, -200); await d.click('.pcard'); await sleep(900);
-  ok('필터 카드 플립', await d.evaluate(() => document.querySelector('.pcard').classList.contains('is-flip')));
+  ok('현장 기록: 필터·오염물 갤러리 6장(인프 현장)', await d.evaluate(() => document.querySelectorAll('#proof .gallery a').length === 6 && !document.querySelector('.pcards')));
   await view(d, '.gallery', null, -200); await d.click('.gallery a'); await sleep(700);
   ok('라이트박스', await d.evaluate(() => document.getElementById('modal-lightbox').classList.contains('is-on')));
   await d.keyboard.press('Escape'); await sleep(500);
@@ -183,6 +184,9 @@ const PAGES = ['index', 'hospital-fabric', 'hospital-floor', 'postpartum', 'pric
           canon: (document.querySelector('link[rel=canonical]') || {}).href, title: document.title, imgs: [...document.images].filter(i => i.complete && i.naturalWidth === 0 && i.getAttribute('src') && !/^data:/.test(i.getAttribute('src'))).map(i => i.getAttribute('src')) };
       });
       if (!mob) {
+        const badge = await s.evaluate(() => ({ noBadge: [...document.querySelectorAll('main img[src*="/stock/"]')].filter(i => !i.closest('.ref') && !(i.closest('.page-hero__bg') && document.querySelector('.page-hero__note')) && !(i.closest('.reel') && document.querySelector('.reel__note'))).length, credits: document.querySelectorAll('.credits li').length }));
+        ok(p + ' 참고 이미지에 표시 누락 없음', badge.noBadge === 0, JSON.stringify(badge));
+        if (p === 'about') ok('about 사진 출처 목록', badge.credits >= 20, 'credits ' + badge.credits);
         await shot(s, tag + p, true);
         ok(p + ' 로드 · JSON-LD · 제목', !/ERR/.test(info.ld) && info.h1 && info.title, info.ld.slice(0, 120));
         ok(p + ' FAQ 화면=구조화 데이터', info.faqN === info.faqDom, info.faqN + ' vs ' + info.faqDom);

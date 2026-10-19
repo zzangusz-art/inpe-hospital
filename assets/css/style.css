@@ -805,3 +805,66 @@ body.reel-playing .hdr{opacity:0;transform:translateY(-100%);pointer-events:none
 @media (max-width:860px){.tables--2{grid-template-columns:1fr}}
 .tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r)}
 .tscroll .ptable{min-width:480px}
+
+/* =========================================================
+   사진 확대 (참고 이미지 · 공간 갤러리 · 카드 이미지)
+   ========================================================= */
+/* 참고 이미지 / 인프 현장 표시 */
+.ref,.own{position:relative}
+.ref::after,.own::after{position:absolute;right:10px;bottom:10px;font-size:11px;font-weight:700;color:#fff;padding:3px 8px;border-radius:6px;letter-spacing:.01em;pointer-events:none;z-index:2;line-height:1.5}
+.ref::after{content:"참고 이미지";background:rgba(14,14,14,.5);backdrop-filter:blur(4px)}
+.own::after{content:"인프 현장";background:var(--orange)}
+.ref img,.own img{display:block;width:100%;height:100%;object-fit:cover}
+
+/* 관리하는 공간 갤러리 */
+.spaces{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.space{display:grid;gap:12px;align-content:start}
+.space__img{border-radius:var(--r);overflow:hidden;aspect-ratio:4/3;background:var(--paper-2)}
+.space__img img{transition:transform .8s var(--ease)}
+.space:hover .space__img img{transform:scale(1.04)}
+.space b{display:block;font-size:17px;font-weight:800;letter-spacing:-.02em}
+.space span{display:block;font-size:14px;color:var(--muted);line-height:1.6}
+.space--wide{grid-column:span 2}
+.space--wide .space__img{aspect-ratio:8/3}
+@media (max-width:1000px){.spaces{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.spaces{gap:12px}.space b{font-size:15px}.space span{font-size:13px}.space--wide .space__img{aspect-ratio:4/3}.space--wide{grid-column:auto}}
+
+/* 카드 이미지 */
+.prob__img{margin:-30px -26px 4px;aspect-ratio:16/10;overflow:hidden;background:var(--paper-2)}
+.prob__img img{transition:transform .8s var(--ease)}
+.prob:hover .prob__img img{transform:scale(1.04)}
+.prob{min-height:0}
+.plan__img{margin:calc(-1 * clamp(24px,2.6vw,34px)) calc(-1 * clamp(24px,2.6vw,34px)) 0;aspect-ratio:16/9;overflow:hidden;border-radius:var(--r-l) var(--r-l) 0 0;background:var(--paper-2)}
+.plan{overflow:hidden}
+.op__img{margin:-26px -26px 2px;aspect-ratio:16/9;overflow:hidden;border-radius:var(--r) var(--r) 0 0;background:var(--paper-2)}
+.op{overflow:hidden}
+
+/* 기사형 페이지 두 장 배치 */
+.figure--2{grid-template-columns:1fr 1fr;gap:12px}
+.figure--2 .ref,.figure--2 .own{border-radius:var(--r);overflow:hidden;aspect-ratio:4/3}
+.figure--2 figcaption{grid-column:1/-1}
+.figure .ref,.figure .own{border-radius:var(--r);overflow:hidden}
+.figure--wide .ref,.figure--wide .own{aspect-ratio:16/8}
+@media (max-width:560px){.figure--2{grid-template-columns:1fr}}
+
+/* 요금 페이지 사진 띠 */
+.pstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+.pstrip figure{display:grid;gap:10px}
+.pstrip .ref{border-radius:var(--r);overflow:hidden;aspect-ratio:16/10}
+.pstrip figcaption{font-size:15px;font-weight:800}
+.pstrip figcaption small{display:block;font-weight:500;color:var(--muted);font-size:13.5px}
+@media (max-width:760px){.pstrip{grid-template-columns:1fr}}
+
+/* 사진 출처 */
+.credits{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px 20px;font-size:13px;color:var(--muted)}
+.credits a{text-decoration:underline;text-underline-offset:2px}
+.sec--dark .space span{color:var(--muted-d)}
+.sec--dark .space__img{background:var(--ink-2)}
+/* 배경 참고 이미지 표시 */
+.reel__note{position:absolute;right:var(--gut);bottom:calc(30px + env(safe-area-inset-bottom));z-index:4;font-size:11px;font-weight:600;color:rgba(255,255,255,.5);opacity:0;transition:opacity .5s;pointer-events:none}
+.reel.is-done .reel__note{opacity:1}
+.page-hero__note{position:absolute;right:var(--gut);bottom:14px;z-index:2;font-size:11px;font-weight:600;color:rgba(255,255,255,.45)}
+@media (max-width:760px){.reel__note{top:calc(var(--hdr) + 8px);bottom:auto}}
+/* 병원 사진(밝은 톤) 위 글자 대비 보강 */
+.reel.is-done .reel__shade{background:linear-gradient(90deg,rgba(8,10,12,.72) 0%,rgba(8,10,12,.45) 55%,rgba(8,10,12,.2) 100%),linear-gradient(180deg,rgba(8,8,8,.45) 0%,rgba(8,8,8,.2) 40%,rgba(8,8,8,.75) 100%)}
+@media (max-width:760px){.reel.is-done .reel__shade{background:linear-gradient(180deg,rgba(8,10,12,.55) 0%,rgba(8,10,12,.5) 45%,rgba(8,10,12,.82) 100%)}}

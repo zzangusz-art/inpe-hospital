@@ -8,35 +8,31 @@
 <body>
 <canvas id="c"></canvas>
 <script>
-/* 인프 병원·산후조리원 청소 15초 쇼릴 렌더러 (인프케어 쇼릴 렌더러 기반)
+/* 인프 병원·산후조리원 청소 15초 쇼릴 렌더러 (차분한 버전)
    - render(t) 는 시간 t(초)에 대한 프레임을 결정적으로 그린다 (같은 t → 같은 그림)
    - render.js 가 0~449 프레임을 돌며 캔버스를 캡처 → ffmpeg 로 mp4 인코딩
-   - ?w=1920&h=1080 (데스크톱) / ?w=1080&h=1920 (모바일) */
+   - ?w=1920&h=1080 (데스크톱) / ?w=720&h=1520 (모바일)
+   - 장면: 병실 → 다인 병실 → 대기실 소파 → 야간 복도 → 엔드 카드. 느린 줌 + 크로스페이드만 사용 (컷·번쩍임·글리치 없음)
+   - 공간 사진은 Unsplash 참고 이미지라 화면 오른쪽 아래에 '참고 이미지'를 표시 */
 const P = new URLSearchParams(location.search);
 const W = +P.get('w') || 1920, H = +P.get('h') || 1080, DUR = 15, FPS = 30;
 const c = document.getElementById('c'); c.width = W; c.height = H;
 const x = c.getContext('2d');
-const tmp = document.createElement('canvas'); tmp.width = W; tmp.height = H; const tx = tmp.getContext('2d');
 const PORT = H > W;
 const U = Math.min(W, H) / 1080;
 /* 세이프 영역: 16:10 노트북 · 19.5:9 폰에서 cover 크롭돼도 글자가 잘리지 않도록 */
-const SX = PORT ? W * 0.07 : W * 0.065, SY = PORT ? H * 0.035 : H * 0.05;
-const ORANGE = '#FF5A00', INK = '#0B0B0B', PAPER = '#F2EEE8';
+const SX = PORT ? W * 0.08 : W * 0.075, SY = PORT ? H * 0.04 : H * 0.06;
+const ORANGE = '#FF5A00', INK = '#0B0B0B';
 
 /* ---------- utils ---------- */
 const cl = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 const pr = (t, a, b) => cl((t - a) / (b - a));
 const lerp = (a, b, p) => a + (b - a) * p;
-const eOut = p => p >= 1 ? 1 : 1 - Math.pow(2, -10 * p);
-const eIn = p => p <= 0 ? 0 : Math.pow(2, 10 * p - 10);
-const eIO = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
-const eBack = p => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
-function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const eIO = p => p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+const eOut = p => 1 - Math.pow(1 - p, 3);
 
 const IMG = {};
-const NAMES = ['fabric-macro', 'sofa-01', 'sofa-02', 'sofa-03', 'sofa-04', 'mattress-01', 'mattress-02', 'mattress-03',
-  'mattress-before', 'mattress-after', 'dust-pad-01', 'dust-pad-03', 'dust-pad-06',
-  'dust-pad-02', 'dust-pad-05', 'dust-bin-01', 'dust-bin-02', 'dust-hand', 'sofa-under-01', 'team-back'];
+const NAMES = ['hosp-room-warm', 'hosp-ward-3beds', 'clinic-waiting-sofa', 'hosp-corridor-night'];
 
 function cover(img, dx, dy, dw, dh, zoom = 1, fx = .5, fy = .5) {
   const ir = img.width / img.height, r = dw / dh;
@@ -46,470 +42,118 @@ function cover(img, dx, dy, dw, dh, zoom = 1, fx = .5, fy = .5) {
   x.drawImage(img, (img.width - sw) * fx, (img.height - sh) * fy, sw, sh, dx, dy, dw, dh);
 }
 function font(w, s) { x.font = `${w} ${s}px NK`; }
-function fit(s, w, size, max) {
-  font(w, size);
-  if (max) { const m = x.measureText(s).width; if (m > max) { size = size * max / m; font(w, size); } }
-  return size;
-}
 function txt(s, px, py, o = {}) {
+  if (!s) return;
   x.save();
   x.letterSpacing = (o.ls || 0) + 'px';
-  fit(s, o.w || 700, o.size || 40, o.max);
+  let size = o.size || 40; font(o.w || 700, size);
+  if (o.max) { const m = x.measureText(s).width; if (m > o.max) { size = size * o.max / m; font(o.w || 700, size); } }
   x.globalAlpha *= (o.alpha == null ? 1 : o.alpha);
-  x.fillStyle = o.color || '#fff'; x.textAlign = o.align || 'center'; x.textBaseline = o.base || 'middle';
+  x.fillStyle = o.color || '#fff'; x.textAlign = o.align || 'left'; x.textBaseline = o.base || 'alphabetic';
   x.fillText(s, px, py);
   x.restore();
 }
-/* 마스크 위로 솟아오르는 텍스트 */
-function reveal(s, px, py, p, o = {}) {
-  if (p <= 0) return;
-  x.save();
-  x.letterSpacing = (o.ls || 0) + 'px';
-  const sz = fit(s, o.w || 800, o.size || 60, o.max);
-  const m = x.measureText(s).width;
-  const al = o.align || 'center';
-  const left = al === 'center' ? px - m / 2 : al === 'right' ? px - m : px;
-  x.beginPath(); x.rect(left - 30 * U, py - sz * .78, m + 60 * U, sz * 1.56); x.clip();
-  x.globalAlpha *= (o.alpha == null ? 1 : o.alpha);
-  x.fillStyle = o.color || '#fff'; x.textAlign = 'left'; x.textBaseline = 'middle';
-  x.fillText(s, left, py + (1 - eOut(p)) * sz * 1.15);
-  x.restore();
-}
-function flash(t, at, dur, col, max) {
-  const p = pr(t, at, at + dur);
-  if (p > 0 && p < 1) { x.save(); x.globalAlpha = (1 - p) * (max || .7); x.fillStyle = col || '#fff'; x.fillRect(0, 0, W, H); x.restore(); }
-}
-function shade(a, col) { x.save(); x.globalAlpha = a; x.fillStyle = col || '#000'; x.fillRect(0, 0, W, H); x.restore(); }
-function vgrad(y0, y1, a0, a1) {
-  const g = x.createLinearGradient(0, y0, 0, y1); g.addColorStop(0, `rgba(0,0,0,${a0})`); g.addColorStop(1, `rgba(0,0,0,${a1})`);
-  x.fillStyle = g; x.fillRect(0, Math.min(y0, y1), W, Math.abs(y1 - y0));
+
+/* ---------- 장면 정의 ----------
+   [이미지, 시작, 끝, 초점x, 초점y, 줌 시작, 줌 끝, 문구 {eb, l1, l2, sub}] */
+const SC = [
+  ['hosp-room-warm', 0.0, 3.8, .55, .5, 1.12, 1.03, { eb: '병원 · 산후조리원 청소', l1: '환자가 눕는 자리는', l2: '닦는 걸로는 부족합니다', sub: '' }],
+  ['hosp-ward-3beds', 3.0, 7.0, .5, .55, 1.03, 1.11, { eb: '01  병상 매트리스', l1: '커버 아래 본체까지', l2: '', sub: '건식 흡입부터 순서대로, 비는 병상부터 차례로' }],
+  ['clinic-waiting-sofa', 6.2, 10.2, .45, .55, 1.12, 1.03, { eb: '02  대기실 소파', l1: '하루 수십 명이 앉는 소파', l2: '', sub: '표면을 닦는 대신 섬유 속 오염을 뽑아냅니다' }],
+  ['hosp-corridor-night', 9.4, 13.2, .5, .62, 1.04, 1.12, { eb: '03  진료가 끝난 뒤', l1: '야간 · 주말에', l2: '구역을 나눠 들어갑니다', sub: '작업 전후 기록은 매달 리포트로 드립니다' }],
+];
+const XF = 0.8;          // 크로스페이드 길이
+const END = 12.4;        // 엔드 카드 시작
+
+function photoAlpha(i, t) {
+  const [, a, b] = SC[i];
+  const fin = i === 0 ? eIO(pr(t, 0, 1.0)) : eIO(pr(t, a, a + XF));
+  const fout = i === SC.length - 1 ? 1 - eIO(pr(t, END, END + 0.9)) : 1;
+  return t < a || t > b ? 0 : fin * fout;
 }
 
-/* ---------- grain ---------- */
-const GRAIN = [];
-function buildGrain() {
-  const r = rng(7);
-  for (let k = 0; k < 4; k++) {
-    const g = document.createElement('canvas'); g.width = Math.ceil(W / 2); g.height = Math.ceil(H / 2);
-    const gx = g.getContext('2d'); const d = gx.createImageData(g.width, g.height);
-    for (let i = 0; i < d.data.length; i += 4) { const v = r() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; }
-    gx.putImageData(d, 0, 0); GRAIN.push(g);
-  }
+function drawPhoto(i, t, alpha) {
+  if (alpha <= 0) return;
+  const [n, a, b, fx, fy, z0, z1] = SC[i];
+  const p = pr(t, a, b);
+  x.save(); x.globalAlpha = alpha;
+  cover(IMG[n], 0, 0, W, H, lerp(z0, z1, p), fx, fy);
+  // 차분한 톤: 살짝 차갑고 어둡게
+  x.fillStyle = 'rgba(12,20,28,.22)'; x.fillRect(0, 0, W, H);
+  // 글자 쪽 그라데이션
+  let g;
+  if (PORT) { g = x.createLinearGradient(0, H * .35, 0, H); g.addColorStop(0, 'rgba(8,12,16,0)'); g.addColorStop(1, 'rgba(8,12,16,.86)'); }
+  else { g = x.createLinearGradient(0, 0, W * .72, 0); g.addColorStop(0, 'rgba(8,12,16,.78)'); g.addColorStop(1, 'rgba(8,12,16,0)'); }
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  x.restore();
 }
 
-/* =========================================================
-   SCENE 1 · 0.0–1.6  오프닝: 주황 라인 → 밴드 → 2,400+ 카운트
-   ========================================================= */
-function s1(t) {
-  x.fillStyle = INK; x.fillRect(0, 0, W, H);
-  const cy = H / 2;
-  const pL = eOut(pr(t, 0.05, 0.42));
-  const pB = eIO(pr(t, 0.36, 0.95));
-  const pF = eIO(pr(t, 1.12, 1.6));
-  const lw = lerp(0, PORT ? W * .9 : W * .64, pL);
-  const bw = lerp(lw, W, pF);
-  const bh = lerp(lerp(3 * U, PORT ? H * .30 : H * .44, pB), H, pF);
-  if (pB > 0) {
-    x.save(); x.beginPath(); x.rect(W / 2 - bw / 2, cy - bh / 2, bw, bh); x.clip();
-    cover(IMG['fabric-macro'], 0, 0, W, H, lerp(1.35, 1.12, pr(t, .36, 1.6)), .5, .45);
-    shade(lerp(.62, .5, pF));
-    x.restore();
-  }
-  // band edges
-  x.save(); x.globalAlpha = 1 - pF; x.fillStyle = ORANGE;
-  x.fillRect(W / 2 - lw / 2, cy - bh / 2 - 2 * U, lw, 3 * U);
-  if (pB > 0) x.fillRect(W / 2 - lw / 2, cy + bh / 2 - 1 * U, lw, 3 * U);
-  x.restore();
-  // counter
-  const pc = eOut(pr(t, .42, 1.2));
-  if (pc > 0) {
-    const n = Math.round(2400 * pc);
-    const s = n.toLocaleString('en-US') + (n >= 2400 ? '+' : '');
-    const lift = eIn(pr(t, 1.2, 1.55)) * -H * .18;
-    const a = 1 - pr(t, 1.3, 1.55);
-    txt('누적 시공 현장', W / 2, cy - (PORT ? 150 : 135) * U + lift, { size: 30 * U, w: 600, color: ORANGE, ls: 6 * U, alpha: a * cl(pc * 3) });
-    txt(s, W / 2, cy + 18 * U + lift, { size: (PORT ? 210 : 230) * U, w: 900, alpha: a, ls: -4 * U, max: W * .9 });
-  }
-  flash(t, 1.56, .1, '#fff', .8);
+function drawCopy(i, t) {
+  const [, a, , , , , , o] = SC[i];
+  const ts = (i === 0 ? 0.5 : a + XF * .6);
+  const te = (i === SC.length - 1 ? END : SC[i + 1][1]);
+  const fadeOut = 1 - eIO(pr(t, te - 0.1, te + 0.5));
+  if (fadeOut <= 0 || t < ts) return;
+  const item = (k, d = 0.9) => { const p = eOut(pr(t, ts + k * 0.22, ts + k * 0.22 + d)); return { a: p * fadeOut, dy: (1 - p) * 18 * U }; };
+  const big = PORT ? 70 * U : 78 * U, lh = big * 1.24;
+  const left = SX;
+  const lines = [o.l1, o.l2].filter(Boolean);
+  const base = PORT ? H - SY - 200 * U : H * .5 + (lines.length === 2 ? lh * .5 : lh * .1);
+  const maxW = PORT ? W - SX * 2 : W * .52;
+  const e = item(0); txt(o.eb, left, base - lh * lines.length - 26 * U + e.dy, { size: 24 * U, w: 700, color: ORANGE, ls: 3 * U, alpha: e.a });
+  lines.forEach((l, k) => { const it = item(k + 1); txt(l, left, base - lh * (lines.length - 1 - k) + it.dy, { size: big, w: 800, ls: -1.5 * U, alpha: it.a, max: maxW }); });
+  if (o.sub) { const it = item(lines.length + 1); txt(o.sub, left, base + 64 * U + it.dy, { size: 30 * U, w: 400, color: 'rgba(255,255,255,.82)', alpha: it.a, max: maxW }); }
 }
 
-/* =========================================================
-   SCENE 2 · 1.6–3.6  현장 컷 8연타
-   ========================================================= */
-const CUTS = [['sofa-01', 'SOFA', '소파 · 패브릭', .5, .55], ['mattress-01', 'MATTRESS', '매트리스', .5, .5], ['sofa-03', 'SOFA', '소파 · 패브릭', .5, .6],
-['mattress-03', 'MATTRESS', '매트리스', .5, .5], ['sofa-under-01', 'SOFA', '소파 하부 · 틈새', .5, .5], ['sofa-04', 'SOFA', '소파 · 패브릭', .5, .6],
-['mattress-02', 'MATTRESS', '매트리스', .5, .5], ['dust-bin-01', 'DUST', '집진통에 모인 오염물', .5, .45]];
-function s2(t) {
-  const lt = t - 1.6, i = Math.min(7, Math.floor(lt / .25)), p = cl((lt - i * .25) / .25);
-  const [n, en, ko, fx, fy] = CUTS[i];
-  const dir = i % 2 ? 1 : -1;
-  x.save();
-  x.translate(W / 2 + dir * 26 * U * (1 - eOut(p)), H / 2); x.rotate(dir * .014 * (1 - eOut(p))); x.translate(-W / 2, -H / 2);
-  cover(IMG[n], -20 * U, -20 * U, W + 40 * U, H + 40 * U, lerp(1.22, 1.06, eOut(p)), fx, fy);
-  x.restore();
-  shade(.28);
-  vgrad(H * .45, H, 0, .75);
-  // giant outline word
-  x.save();
-  const big = fit(en, 900, (PORT ? 250 : 320) * U, W - SX * 2);
-  x.letterSpacing = (-4 * U) + 'px';
-  x.lineWidth = 2.2 * U; x.strokeStyle = 'rgba(255,255,255,.92)';
-  x.textAlign = 'left'; x.textBaseline = 'alphabetic';
-  x.strokeText(en, SX + (1 - eOut(p)) * 40 * U * dir, H - SY - (PORT ? 230 : 100) * U);
-  x.restore();
-  txt(ko, SX + 6 * U, H - SY - (PORT ? 200 : 72) * U - big * .02, { size: 34 * U, w: 700, color: ORANGE, align: 'left', ls: 2 * U });
-  txt(String(i + 1).padStart(2, '0') + ' / 08', W - SX, H - SY - (PORT ? 200 : 72) * U, { size: 22 * U, w: 600, color: 'rgba(255,255,255,.75)', align: 'right', ls: 4 * U });
-  if (p < .16) shade((.16 - p) / .16 * .55, '#fff');
-}
-
-/* =========================================================
-   SCENE 3 · 3.6–5.6  키네틱 타이포: 매트리스 / 소파 / 바닥 / 기록
-   ========================================================= */
-function s3(t) {
-  x.fillStyle = INK; x.fillRect(0, 0, W, H);
-  // grid
-  x.save(); x.strokeStyle = 'rgba(255,255,255,.045)'; x.lineWidth = 1;
-  const gs = 90 * U, off = ((t - 3.6) * 40 * U) % gs;
-  for (let gx = -gs + off; gx < W + gs; gx += gs) { x.beginPath(); x.moveTo(gx, 0); x.lineTo(gx, H); x.stroke(); }
-  for (let gy = 0; gy < H; gy += gs) { x.beginPath(); x.moveTo(0, gy); x.lineTo(W, gy); x.stroke(); }
-  x.restore();
-  const topY = PORT ? H * .27 : H * .25;
-  reveal('병원에서 먼저 보이는 곳', W / 2, topY, pr(t, 3.66, 4.05), { size: (PORT ? 76 : 70) * U, w: 800, max: W * .88 });
-  const words = ['매트리스', '소파', '바닥', '기록'], beats = [4.0, 4.24, 4.48, 4.72];
-  let bw, bh, pos;
-  if (PORT) {
-    bw = (W - SX * 2 - 28 * U) / 2; bh = 300 * U;
-    pos = i => [SX + (i % 2) * (bw + 28 * U), H * .40 + Math.floor(i / 2) * (bh + 28 * U)];
-  } else {
-    bw = (W - SX * 2 - 3 * 26 * U) / 4; bh = 250 * U;
-    pos = i => [SX + i * (bw + 26 * U), H * .47];
-  }
-  words.forEach((w, i) => {
-    const p = pr(t, beats[i], beats[i] + .24); if (p <= 0) return;
-    const [bx, by] = pos(i);
-    const s = lerp(1.45, 1, eOut(p));
-    x.save();
-    x.translate(bx + bw / 2, by + bh / 2); x.scale(s, s); x.translate(-bw / 2, -bh / 2);
-    x.globalAlpha = cl(p * 4);
-    const solid = i % 2 === 0;
-    if (solid) { x.fillStyle = ORANGE; x.fillRect(0, 0, bw, bh); }
-    else { x.strokeStyle = '#fff'; x.lineWidth = 3 * U; x.strokeRect(1.5 * U, 1.5 * U, bw - 3 * U, bh - 3 * U); }
-    x.restore();
-    x.save(); x.translate(bx + bw / 2, by + bh / 2); x.scale(s, s);
-    txt(w, 0, 6 * U, { size: (PORT ? 120 : 112) * U, w: 900, color: solid ? INK : '#fff', max: bw * .82, alpha: cl(p * 4) });
-    txt('0' + (i + 1), -bw / 2 + 22 * U, -bh / 2 + 26 * U, { size: 18 * U, w: 700, color: solid ? 'rgba(11,11,11,.7)' : 'rgba(255,255,255,.6)', align: 'left', ls: 3 * U, alpha: cl(p * 4) });
-    x.restore();
-  });
-  txt('환자와 보호자가 먼저 느끼는 네 곳부터 짚습니다', W / 2, PORT ? H * .82 : H * .86, { size: 30 * U, w: 500, color: 'rgba(255,255,255,.72)', alpha: pr(t, 4.95, 5.2), max: W * .86 });
-  // glitch out
-  const g = pr(t, 5.3, 5.6);
-  if (g > 0) {
-    tx.clearRect(0, 0, W, H); tx.drawImage(c, 0, 0);
-    x.fillStyle = INK; x.fillRect(0, 0, W, H);
-    const r = rng(Math.floor(t * 30)); const sl = 14;
-    for (let k = 0; k < sl; k++) {
-      const sh = H / sl, dx = (r() - .5) * W * .5 * eIn(g) * 2;
-      x.drawImage(tmp, 0, k * sh, W, sh, dx, k * sh, W, sh);
-    }
-    if (g > .5) shade((g - .5) * 2 * .9, INK);
-  }
-}
-
-/* =========================================================
-   SCENE 4 · 5.6–8.0  비포/애프터 UV 스캔
-   ========================================================= */
-function s4(t) {
-  x.fillStyle = INK; x.fillRect(0, 0, W, H);
-  x.save(); x.filter = 'blur(28px) brightness(.32)'; cover(IMG['mattress-before'], -60, -60, W + 120, H + 120, 1.1); x.restore();
-  let pw, ph, px, py;
-  if (PORT) { pw = W * .86; ph = pw / 1.2; px = (W - pw) / 2; py = H * .17; }
-  else { ph = H * .66; pw = ph * 1.2; px = W * .09; py = (H - ph) / 2 + 10 * U; }
-  const pin = eOut(pr(t, 5.6, 5.95));
-  const sc = lerp(1.08, 1, pin);
-  const exitP = eIn(pr(t, 7.78, 8.0));
-  x.save();
-  x.globalAlpha = pin;
-  x.translate(px + pw / 2, py + ph / 2); x.scale(sc + exitP * .5, sc + exitP * .5); x.translate(-(px + pw / 2), -(py + ph / 2));
-  // shadow + frame
-  x.save(); x.shadowColor = 'rgba(0,0,0,.5)'; x.shadowBlur = 60 * U; x.shadowOffsetY = 24 * U; x.fillStyle = '#000'; x.fillRect(px, py, pw, ph); x.restore();
-  cover(IMG['mattress-before'], px, py, pw, ph, 1.02);
-  const sp = eIO(pr(t, 6.0, 7.45));
-  const bx = px + pw * sp;
-  if (sp > 0) {
-    x.save(); x.beginPath(); x.rect(px, py, bx - px, ph); x.clip(); cover(IMG['mattress-after'], px, py, pw, ph, 1.02); x.restore();
-    // UV bar
-    const gw = 150 * U;
-    const g = x.createLinearGradient(bx - gw, 0, bx + gw * .4, 0);
-    g.addColorStop(0, 'rgba(124,92,255,0)'); g.addColorStop(.72, 'rgba(150,120,255,.38)'); g.addColorStop(.9, 'rgba(220,210,255,.75)'); g.addColorStop(1, 'rgba(124,92,255,0)');
-    x.save(); x.globalAlpha = sp < 1 ? 1 : 1 - pr(t, 7.45, 7.6);
-    x.fillStyle = g; x.fillRect(bx - gw, py, gw * 1.4, ph);
-    x.fillStyle = '#fff'; x.fillRect(bx - 1.5 * U, py - 14 * U, 3 * U, ph + 28 * U);
-    x.restore();
-  }
-  // chips
-  const chip = (label, cx, bg, fg, a) => {
-    x.save(); x.globalAlpha *= a; font(700, 20 * U); x.letterSpacing = 4 * U + 'px';
-    const m = x.measureText(label).width + 36 * U;
-    x.fillStyle = bg; x.fillRect(cx, py + 20 * U, m, 40 * U);
-    x.fillStyle = fg; x.textBaseline = 'middle'; x.textAlign = 'left'; x.fillText(label, cx + 18 * U, py + 41 * U);
-    x.restore(); return m;
-  };
-  chip('작업 전', px + 20 * U, 'rgba(0,0,0,.72)', '#fff', 1 - pr(t, 7.1, 7.3));
-  const am = 140 * U;
-  chip('작업 후', px + pw - am, ORANGE, '#fff', pr(t, 6.9, 7.2));
-  x.restore();
-  txt('인프 현장 사진 · 매트리스 얼룩 제거', px + pw / 2, py + ph + 44 * U, { size: 22 * U, w: 500, color: 'rgba(255,255,255,.6)', alpha: pin * (1 - exitP), ls: 1 * U });
-  // steps
-  const steps = ['UV-C 살균', '건식 흡입', '습식 추출 · 고온 스팀', '하부 · 틈새 · 마감'];
-  let sx, sy, gap;
-  if (PORT) { sx = W * .07; sy = py + ph + 215 * U; gap = 96 * U; }
-  else { sx = px + pw + 110 * U; sy = H * .34; gap = 104 * U; }
-  const head = pr(t, 5.75, 6.1);
-  reveal('건식부터, 순서대로', sx, sy - (PORT ? 70 : 92) * U, head, { size: (PORT ? 56 : 54) * U, w: 800, align: 'left', alpha: 1 - exitP, max: PORT ? W * .86 : W - sx - 60 * U });
-  steps.forEach((s, i) => {
-    const on = sp > (i + .5) / 4.2 || (i === 0 && sp > .02);
-    const a = pr(t, 5.9 + i * .08, 6.15 + i * .08) * (1 - exitP);
-    const yy = sy + i * gap;
-    x.save(); x.globalAlpha = a;
-    x.strokeStyle = on ? ORANGE : 'rgba(255,255,255,.35)'; x.lineWidth = 2 * U;
-    x.beginPath(); x.arc(sx + 22 * U, yy, 22 * U, 0, Math.PI * 2);
-    if (on) { x.fillStyle = ORANGE; x.fill(); } x.stroke();
-    if (on) { x.strokeStyle = '#fff'; x.lineWidth = 3.4 * U; x.beginPath(); x.moveTo(sx + 12 * U, yy); x.lineTo(sx + 19 * U, yy + 7 * U); x.lineTo(sx + 32 * U, yy - 7 * U); x.stroke(); }
-    x.restore();
-    txt('0' + (i + 1), sx + 70 * U, yy, { size: 20 * U, w: 700, color: on ? ORANGE : 'rgba(255,255,255,.4)', align: 'left', ls: 2 * U, alpha: a });
-    txt(s, sx + 116 * U, yy + 1 * U, { size: 40 * U, w: on ? 800 : 500, color: on ? '#fff' : 'rgba(255,255,255,.45)', align: 'left', alpha: a });
-  });
-  flash(t, 7.92, .1, '#fff', .85);
-}
-
-/* =========================================================
-   SCENE 5 · 8.0–10.0  현장 필터 증거 (밝은 화면 전환)
-   ========================================================= */
-function s5(t) {
-  x.fillStyle = PAPER; x.fillRect(0, 0, W, H);
-  const cards = [['dust-pad-03', -8], ['dust-pad-01', 3], ['dust-pad-06', 9]];
-  let ch, cw, cpos;
-  if (PORT) { cw = W * .44; ch = cw * 1.3; cpos = [[W * .30, H * .64], [W * .52, H * .66], [W * .73, H * .63]]; }
-  else { ch = H * .62; cw = ch * .78; cpos = [[W * .62, H * .52], [W * .74, H * .55], [W * .86, H * .51]]; }
-  const zoom = eIn(pr(t, 9.35, 10.0));
-  x.save();
-  const [zx, zy] = cpos[1];
-  x.translate(zx, zy); x.scale(1 + zoom * 2.4, 1 + zoom * 2.4); x.translate(-zx, -zy);
-  // text
-  const tx0 = PORT ? W / 2 : Math.max(SX, W * .075), al = PORT ? 'center' : 'left';
-  const ty = PORT ? H * .19 : H * .40;
-  txt('현장 필터 기록', tx0, ty - 110 * U, { size: 22 * U, w: 700, color: ORANGE, align: al, ls: 6 * U, alpha: pr(t, 8.05, 8.3) });
-  reveal('겉은 깨끗해 보여도', tx0, ty - 18 * U, pr(t, 8.08, 8.45), { size: 92 * U, w: 900, color: INK, align: al, max: PORT ? W * .9 : W * .36 });
-  reveal('안에는 이만큼 있습니다', tx0, ty + 88 * U, pr(t, 8.18, 8.55), { size: 92 * U, w: 900, color: INK, align: al, max: PORT ? W * .9 : W * .36 });
-  txt('소파 · 매트리스 속 먼지와 각질', tx0, ty + 180 * U, { size: 28 * U, w: 500, color: '#55504a', align: al, alpha: pr(t, 8.45, 8.75), max: PORT ? W * .9 : W * .36 });
-  txt('필터에 걸러진 실제 오염물입니다', tx0, ty + 222 * U, { size: 28 * U, w: 500, color: '#55504a', align: al, alpha: pr(t, 8.5, 8.8), max: PORT ? W * .9 : W * .36 });
-  cards.forEach(([n, rot], i) => {
-    const t0 = 8.15 + i * .17; const p = pr(t, t0, t0 + .5); if (p <= 0) return;
-    const e = eBack(p);
-    const [cx, cy] = cpos[i];
-    x.save();
-    x.translate(cx, cy + (1 - e) * H * .75); x.rotate((rot * (1 + (1 - e) * 2.5)) * Math.PI / 180);
-    x.shadowColor = 'rgba(40,30,20,.28)'; x.shadowBlur = 50 * U; x.shadowOffsetY = 26 * U;
-    x.fillStyle = '#fff'; x.fillRect(-cw / 2, -ch / 2, cw, ch);
-    x.shadowColor = 'transparent';
-    const b = 14 * U;
-    cover(IMG[n], -cw / 2 + b, -ch / 2 + b, cw - b * 2, ch - b * 2 - 40 * U, 1.05);
-    txt('필터 0' + (i + 1), -cw / 2 + b + 4 * U, ch / 2 - 26 * U, { size: 18 * U, w: 700, color: '#8a837b', align: 'left', ls: 3 * U });
-    x.restore();
-  });
-  x.restore();
-  if (zoom > 0) shade(eIn(pr(t, 9.7, 10.0)), '#0A0C10');
-}
-
-/* =========================================================
-   SCENE 6 · 10.0–12.0  야간 · 주말 구역 분할 일정
-   ========================================================= */
-const ZONES = ['1층 외래', '로비 · 복도', '3층 병동', '4층 병동', '원무 · 사무'];
-const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
-// [구역, 요일, 라벨, 주황 여부]
-const SLOTS = [[0, 0, '19시', 0], [2, 1, '14시', 0], [4, 1, '19시', 0], [0, 2, '19시', 0], [3, 2, '14시', 0], [2, 3, '14시', 0], [0, 4, '19시', 0], [3, 4, '14시', 0], [4, 4, '19시', 0], [1, 5, '14시', 0], [3, 5, '매트리스', 1], [1, 6, '바닥', 1]];
-function s6(t) {
-  x.fillStyle = '#0A0C10'; x.fillRect(0, 0, W, H);
-  const lt = t - 10;
-  // 배경 격자 흐름
-  x.save(); x.strokeStyle = 'rgba(255,255,255,.04)'; x.lineWidth = 1;
-  const gs = 90 * U, off = (lt * 30 * U) % gs;
-  for (let gy = -gs + off; gy < H + gs; gy += gs) { x.beginPath(); x.moveTo(0, gy); x.lineTo(W, gy); x.stroke(); }
-  x.restore();
-  // 표 위치
-  let gx0, gy0, gw, gh;
-  if (PORT) { gw = W - SX * 2; gx0 = SX; gy0 = H * .47; gh = H * .36; }
-  else { gw = W * .5; gx0 = W - SX - gw; gy0 = H * .24; gh = H * .54; }
-  const lab = PORT ? gw * .25 : gw * .2, cw = (gw - lab) / 7, rh = gh / 6, g = 4 * U;
-  const inA = eOut(pr(t, 10.0, 10.35)), outA = 1 - pr(t, 11.82, 11.98);
-  x.save(); x.globalAlpha = inA * outA;
-  // 머리줄
-  DAYS.forEach((d, j) => {
-    const cx = gx0 + lab + j * cw;
-    x.fillStyle = j >= 5 ? 'rgba(255,90,0,.16)' : 'rgba(255,255,255,.06)'; x.fillRect(cx + g / 2, gy0 + g / 2, cw - g, rh - g);
-    txt(d, cx + cw / 2, gy0 + rh / 2, { size: 24 * U, w: 700, color: j >= 5 ? ORANGE : 'rgba(255,255,255,.7)' });
-  });
-  ZONES.forEach((z, i) => {
-    const cy = gy0 + (i + 1) * rh;
-    x.fillStyle = 'rgba(255,255,255,.06)'; x.fillRect(gx0 + g / 2, cy + g / 2, lab - g, rh - g);
-    txt(z, gx0 + 16 * U, cy + rh / 2, { size: 22 * U, w: 700, color: 'rgba(255,255,255,.82)', align: 'left', max: lab - 28 * U });
-    for (let j = 0; j < 7; j++) { x.fillStyle = 'rgba(255,255,255,.025)'; x.fillRect(gx0 + lab + j * cw + g / 2, cy + g / 2, cw - g, rh - g); }
-  });
-  x.restore();
-  // 작업 칸이 차례로 채워짐
-  SLOTS.forEach(([zi, dj, label, hot], k) => {
-    const t0 = 10.3 + k * .085, p = pr(t, t0, t0 + .22); if (p <= 0) return;
-    const e = eBack(p);
-    const cx = gx0 + lab + dj * cw + cw / 2, cy = gy0 + (zi + 1) * rh + rh / 2;
-    x.save(); x.globalAlpha = cl(p * 3) * outA; x.translate(cx, cy); x.scale(e, e);
-    x.fillStyle = hot ? ORANGE : '#fff';
-    x.fillRect(-(cw - g) / 2, -(rh - g) / 2, cw - g, rh - g);
-    txt(label, 0, 1 * U, { size: (hot ? 19 : 22) * U, w: 800, color: hot ? '#fff' : INK, max: cw - 12 * U });
-    x.restore();
-  });
-  // 진행 막대 (주간 스윕)
-  const sw = eIO(pr(t, 10.3, 11.4));
-  if (sw > 0 && sw < 1) { x.save(); x.globalAlpha = .9 * outA; x.fillStyle = ORANGE; x.fillRect(gx0 + lab + (gw - lab) * sw - 1.5 * U, gy0 - 10 * U, 3 * U, gh + 20 * U); x.restore(); }
-  // 문구
-  if (!window.NOTEXT) {
-    const tx0 = PORT ? W / 2 : SX, al = PORT ? 'center' : 'left', ty = PORT ? H * .2 : H * .4, mx = PORT ? W * .88 : W * .38;
-    txt('진료를 멈추지 않는 일정', tx0, ty - 120 * U, { size: 22 * U, w: 700, color: ORANGE, ls: 6 * U, align: al, alpha: pr(t, 10.1, 10.35) * outA });
-    reveal('야간 · 주말에', tx0, ty - 20 * U, pr(t, 10.15, 10.5), { size: 108 * U, w: 900, align: al, max: mx, alpha: outA });
-    reveal('구역을 나눠 들어갑니다', tx0, ty + 92 * U, pr(t, 10.3, 10.65), { size: 64 * U, w: 800, color: '#dde2ea', align: al, max: mx, alpha: outA });
-    txt('층 · 병동별로 나누고, 작업 기록은 매달 리포트로', tx0, ty + (PORT ? 180 : 190) * U, { size: 26 * U, w: 500, color: 'rgba(255,255,255,.66)', align: al, alpha: pr(t, 10.8, 11.1) * outA, max: mx });
-  }
-  flash(t, 11.93, .1, '#fff', .6);
-}
-
-/* =========================================================
-   SCENE 7 · 12.0–13.6  모자이크 + 숫자
-   ========================================================= */
-const MOS = ['sofa-01', 'dust-pad-02', 'mattress-02', 'fabric-macro', 'sofa-03', 'dust-bin-01', 'mattress-03', 'sofa-under-01', 'dust-pad-05', 'sofa-04', 'mattress-01', 'dust-hand', 'sofa-02', 'dust-bin-02', 'dust-pad-03'];
-const ORDER = (() => { const r = rng(9), a = MOS.map((_, i) => i); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; })();
-function s7(t) {
-  x.fillStyle = INK; x.fillRect(0, 0, W, H);
-  const cols = PORT ? 3 : 5, rows = PORT ? 5 : 3, tw = W / cols, th = H / rows, gap = 3 * U;
-  for (let i = 0; i < cols * rows; i++) {
-    const t0 = 12.0 + ORDER.indexOf(i % MOS.length) * .028;
-    const p = eOut(pr(t, t0, t0 + .32)); if (p <= 0) continue;
-    const cx0 = (i % cols) * tw, cy0 = Math.floor(i / cols) * th;
-    x.save(); x.translate(cx0 + tw / 2, cy0 + th / 2); x.scale(p, p);
-    cover(IMG[MOS[i % MOS.length]], -tw / 2 + gap, -th / 2 + gap, tw - gap * 2, th - gap * 2, lerp(1.25, 1.1, pr(t, 12, 13.6)));
-    x.restore();
-  }
-  shade(lerp(.15, .66, pr(t, 12.3, 12.55)));
-  const stats = [['2,400+', '누적 시공'], ['4.97', '고객 만족도'], ['50명+', '전문 인력']], times = [12.42, 12.68, 12.94];
-  stats.forEach(([n, l], i) => {
-    const p = pr(t, times[i], times[i] + .32); if (p <= 0) return;
-    const sx = PORT ? W / 2 : W * (.2 + i * .3), sy = PORT ? H * (.3 + i * .2) : H / 2;
-    const s = lerp(1.5, 1, eOut(p));
-    x.save(); x.translate(sx, sy); x.scale(s, s);
-    txt(n, 0, -20 * U, { size: 170 * U, w: 900, ls: -4 * U, alpha: cl(p * 3), max: PORT ? W * .8 : W * .28 });
-    txt(l, 0, 100 * U, { size: 34 * U, w: 600, color: ORANGE, ls: 3 * U, alpha: cl(p * 3) });
-    x.restore();
-    if (!PORT && i > 0) { x.save(); x.globalAlpha = cl(p * 3) * .35; x.fillStyle = '#fff'; x.fillRect(W * (.05 + i * .3), H * .36, 1.5 * U, H * .28); x.restore(); }
-  });
-  const ex = eIn(pr(t, 13.42, 13.6));
-  if (ex > 0) { x.fillStyle = INK; x.fillRect(0, 0, W, H * ex / 2); x.fillRect(0, H - H * ex / 2, W, H * ex / 2); }
-}
-
-/* =========================================================
-   SCENE 8 · 13.6–15.0  팀 → 엔드 카드
-   ========================================================= */
-function s8(t) {
-  x.fillStyle = INK; x.fillRect(0, 0, W, H);
-  if (t < 14.5) {
-    cover(IMG['team-back'], 0, 0, W, H, lerp(1.18, 1.05, eOut(pr(t, 13.6, 14.5))), .5, PORT ? .6 : .92);
-    vgrad(H * .35, H, 0, .85);
-    const op = eOut(pr(t, 13.6, 13.75)); if (op < 1) { x.fillStyle = INK; x.fillRect(0, 0, W, H / 2 * (1 - op)); x.fillRect(0, H - H / 2 * (1 - op), W, H / 2 * (1 - op)); }
-    const lx = PORT ? W / 2 : SX, al = PORT ? 'center' : 'left';
-    txt('인프 현장팀', lx, H - (PORT ? 330 : 250) * U, { size: 22 * U, w: 700, color: ORANGE, align: al, ls: 6 * U, alpha: pr(t, 13.72, 13.95) });
-    reveal('장비 · 인력 · 약품 모두 직접', lx, H - (PORT ? 230 : 160) * U, pr(t, 13.78, 14.1), { size: (PORT ? 104 : 116) * U, w: 900, align: al, max: W * .9 });
-  }
-  // wipes
-  const w1 = eIO(pr(t, 14.18, 14.42)), w2 = eIO(pr(t, 14.28, 14.52));
-  if (w1 > 0) { x.fillStyle = ORANGE; x.fillRect(0, 0, W * w1, H); }
-  if (w2 > 0) { x.fillStyle = INK; x.fillRect(0, 0, W * w2, H); }
-  if (t >= 14.45) endCard(t);
-}
 function endCard(t) {
-  x.fillStyle = INK; x.fillRect(0, 0, W, H);
-  // thin frame
-  x.save(); x.globalAlpha = pr(t, 14.5, 14.8) * .14; x.strokeStyle = '#fff'; x.lineWidth = 1.2 * U; x.strokeRect(SX - 20 * U, SY, W - (SX - 20 * U) * 2, H - SY * 2); x.restore();
-  const ls = 160 * U;
-  const lp = eBack(pr(t, 14.45, 14.78));
+  const p = eIO(pr(t, END, END + 0.9));
+  if (p <= 0) return;
+  x.save(); x.globalAlpha = p; x.fillStyle = INK; x.fillRect(0, 0, W, H); x.restore();
+  const q = k => eOut(pr(t, END + 0.5 + k * 0.18, END + 1.4 + k * 0.18));
+  const ls = 150 * U, s = lerp(.96, 1, q(0));
   let lx, ly, tx0, al, wy;
-  if (PORT) { lx = W / 2 - ls / 2; ly = H * .36 - ls / 2; tx0 = W / 2; al = 'center'; wy = H * .36 + 170 * U; }
-  else {
-    font(900, 150 * U); const ww = x.measureText('인프').width;
-    const gw = ls + 54 * U + ww; lx = W / 2 - gw / 2; ly = H * .42 - ls / 2; tx0 = lx + ls + 54 * U; al = 'left'; wy = H * .42;
-  }
-  x.save(); x.translate(lx + ls / 2, ly + ls / 2); x.scale(lp, lp);
-  const L = IMG['logo']; x.drawImage(L, -ls / 2 * (L.width / L.height), -ls / 2, ls * (L.width / L.height), ls);
+  if (PORT) { lx = W / 2 - ls / 2; ly = H * .36 - ls / 2; tx0 = W / 2; al = 'center'; wy = H * .36 + 190 * U; }
+  else { font(900, 140 * U); const ww = x.measureText('인프').width; const gw = ls + 48 * U + ww; lx = W / 2 - gw / 2; ly = H * .40 - ls / 2; tx0 = lx + ls + 48 * U; al = 'left'; wy = H * .40 + 48 * U; }
+  x.save(); x.globalAlpha = q(0); x.translate(lx + ls / 2, ly + ls / 2); x.scale(s, s);
+  const L = IMG['logo']; x.drawImage(L, -ls / 2, -ls / 2, ls, ls);
   x.restore();
-  reveal('인프', tx0, wy, pr(t, 14.52, 14.8), { size: 150 * U, w: 900, align: al, ls: -4 * U });
-  txt('병원 · 산후조리원 청소', tx0 + (PORT ? 0 : 6 * U), wy + (PORT ? 112 : 112) * U, { size: 34 * U, w: 500, color: '#9a9a9a', align: al, ls: 4 * U, alpha: pr(t, 14.62, 14.82) });
-  const tagY = PORT ? wy + 200 * U : H * .66;
-  txt('정기청소  |  병상 매트리스 · 대기실 소파  |  바닥 청소 · 코팅', W / 2, tagY, { size: (PORT ? 30 : 30) * U, w: 500, color: '#d6d6d6', alpha: pr(t, 14.68, 14.88), max: W * .88 });
-  txt('0507-1314-5792   ·   현장 실측 무료', W / 2, tagY + 64 * U, { size: 26 * U, w: 700, color: ORANGE, ls: 3 * U, alpha: pr(t, 14.74, 14.92) });
+  txt('인프', tx0, wy, { size: 140 * U, w: 900, align: al, ls: -3 * U, alpha: q(1) });
+  txt('병원 · 산후조리원 청소', tx0 + (PORT ? 0 : 4 * U), wy + 62 * U, { size: 32 * U, w: 500, color: '#a8a8a8', align: al, ls: 3 * U, alpha: q(2) });
+  const tagY = PORT ? wy + 170 * U : H * .68;
+  txt('정기청소  ·  병상 매트리스 · 대기실 소파  ·  바닥 청소 · 코팅', W / 2, tagY, { size: 28 * U, w: 500, color: '#d6d6d6', align: 'center', alpha: q(3), max: W * .86 });
+  txt('0507-1314-5792   ·   현장 실측 무료', W / 2, tagY + 60 * U, { size: 26 * U, w: 700, color: ORANGE, align: 'center', ls: 2 * U, alpha: q(4) });
 }
 
-/* ---------- HUD ---------- */
-const LABELS = [[0, '01  누적 시공'], [1.6, '02  현장'], [3.6, '03  먼저 보이는 곳'], [5.6, '04  패브릭 케어'], [8, '05  필터 기록'], [10, '06  구역 분할 일정'], [12, '07  숫자로 보는 인프'], [13.6, '08  현장팀']];
-function hud(t, light) {
-  if (window.NOTEXT) return;
-  const a = 1 - pr(t, 14.3, 14.5);
+function hud(t) {
+  const a = 1 - pr(t, END, END + 0.6);
   if (a <= 0) return;
-  const col = light ? 'rgba(11,11,11,.6)' : 'rgba(255,255,255,.62)';
-  const m = SX, mt = SY + 8 * U;
   x.save(); x.globalAlpha = a;
-  txt('인프 현장 기록 2026', m, mt, { size: 17 * U, w: 600, color: col, align: 'left', ls: 3.5 * U });
-  const f = Math.min(449, Math.round(t * FPS)), sec = Math.floor(f / FPS), ff = f % FPS;
-  const tc = `00:00:${String(sec).padStart(2, '0')}:${String(ff).padStart(2, '0')}`;
-  txt(tc, W - m, mt, { size: 17 * U, w: 600, color: col, align: 'right', ls: 3 * U });
-  font(600, 17 * U); x.letterSpacing = 3 * U + 'px';
-  const tw = x.measureText(tc).width;
-  if (Math.floor(t * 2) % 2 === 0) { x.fillStyle = ORANGE; x.beginPath(); x.arc(W - m - tw - 18 * U, mt, 5 * U, 0, Math.PI * 2); x.fill(); }
-  // progress
-  const py = H - SY - 6 * U;
-  x.fillStyle = light ? 'rgba(11,11,11,.18)' : 'rgba(255,255,255,.2)'; x.fillRect(m, py, W - m * 2, 2 * U);
-  x.fillStyle = ORANGE; x.fillRect(m, py, (W - m * 2) * (t / DUR), 2 * U);
-  let lab = LABELS[0][1]; LABELS.forEach(([s, l]) => { if (t >= s) lab = l; });
-  txt(lab, m, py - 20 * U, { size: 15 * U, w: 700, color: col, align: 'left', ls: 3 * U });
-  txt('인천 · 서울 · 경기', W - m, py - 20 * U, { size: 15 * U, w: 600, color: col, align: 'right', ls: 3 * U });
+  txt('인프 · 병원 · 산후조리원 청소', SX, SY + 10 * U, { size: 17 * U, w: 600, color: 'rgba(255,255,255,.6)', ls: 2 * U });
+  txt('참고 이미지', W - SX, H - SY - 18 * U, { size: 15 * U, w: 600, color: 'rgba(255,255,255,.55)', align: 'right', ls: 1 * U });
+  const py = H - SY;
+  x.fillStyle = 'rgba(255,255,255,.18)'; x.fillRect(SX, py, W - SX * 2, 1.5 * U);
+  x.fillStyle = 'rgba(255,255,255,.7)'; x.fillRect(SX, py, (W - SX * 2) * (t / DUR), 1.5 * U);
   x.restore();
 }
 
 /* ---------- main ---------- */
 window.render = function (t) {
   x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.filter = 'none';
-  let light = false;
-  if (t < 1.6) s1(t);
-  else if (t < 3.6) s2(t);
-  else if (t < 5.6) s3(t);
-  else if (t < 8.0) s4(t);
-  else if (t < 10.0) { s5(t); light = t < 9.6; }
-  else if (t < 12.0) s6(t);
-  else if (t < 13.6) s7(t);
-  else s8(t);
-  // vignette
-  const vg = x.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .35, W / 2, H / 2, Math.hypot(W, H) * .62);
-  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, light ? 'rgba(60,40,20,.16)' : 'rgba(0,0,0,.42)');
+  x.fillStyle = '#000'; x.fillRect(0, 0, W, H);
+  SC.forEach((_, i) => drawPhoto(i, t, photoAlpha(i, t)));
+  SC.forEach((_, i) => drawCopy(i, t));
+  endCard(t);
+  const vg = x.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .4, W / 2, H / 2, Math.hypot(W, H) * .62);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.28)');
   x.fillStyle = vg; x.fillRect(0, 0, W, H);
-  hud(t, light);
-  // grain
-  x.save(); x.globalAlpha = light ? .035 : .055; x.globalCompositeOperation = 'overlay';
-  x.drawImage(GRAIN[Math.floor(t * FPS) % GRAIN.length], 0, 0, W, H);
-  x.restore();
+  hud(t);
 };
 
 (async function boot() {
   const f = new FontFace('NK', 'url(NotoSansKR-VF.ttf)', { weight: '100 900' });
   await f.load(); document.fonts.add(f);
-  const base = '../assets/img/real/';
-  await Promise.all(NAMES.map(n => new Promise((res, rej) => { const i = new Image(); i.onload = () => { IMG[n] = i; res(); }; i.onerror = () => rej(n); i.src = base + n + '.jpg'; })));
+  await Promise.all(NAMES.map(n => new Promise((res, rej) => { const i = new Image(); i.onload = () => { IMG[n] = i; res(); }; i.onerror = () => rej(n); i.src = '../assets/img/stock/' + n + '.jpg'; })));
   await new Promise((res, rej) => { const i = new Image(); i.onload = () => { IMG.logo = i; res(); }; i.onerror = rej; i.src = '../assets/img/logo-512.png'; });
-  buildGrain();
   window.render(+(P.get('t') || 0));
   window.READY = true;
 })();
