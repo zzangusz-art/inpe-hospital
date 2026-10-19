@@ -40,6 +40,13 @@
 - E2E 72/72: 히어로 챕터 전환, 안심존 탭, 카드 플립·라이트박스, 공정 시퀀스, 계산기 금액 5가지 경우(958,000 / 2,108,000 / 2,156,000 / 1,320,000 등 손계산과 일치), 계산→신청서 프리필, 단계별 필수값 차단(서비스·지역·기관명·성함·연락처·동의·이메일 형식), 제출→접수번호 IH, 저장 내용, 전송 실패→문자 폴백·재전송 대기, FAQ, 점검표 모달, 모바일 가로 넘침 없음(7페이지), 페이지별 JSON-LD 파싱·FAQ 개수 일치·반려동물 문구 없음·깨진 이미지 없음·canonical, 콘솔/네트워크 오류 0
 - Apps Script 목업 16/16: 열 32개 위치, 중복 제출, 스팸, 동의, 메일 답장 주소, 피드 마스킹, 상태 목록
 
+## 2026-10-19 (2) — GitHub Pages 미리보기 배포
+- GitHub 저장소: https://github.com/zzangusz-art/inpe-hospital (public, main 브랜치 루트 → GitHub Pages, 인프케어와 같은 방식)
+- 미리보기 주소: https://zzangusz-art.github.io/inpe-hospital/ — github.io에서 열릴 때만 noindex 자동 부착, canonical은 정식 주소(inpe.kr/hospital/)
+- 저장소 제외: `_reel` 폰트 · node_modules · stills, `_dev/shots`, `_dev/mock-leads.json`, `.claude/`
+- 배포 점검: `node _dev/remote-check.js <주소>`
+- 상담 DB(LEAD_ENDPOINT) 미연결 상태라 미리보기에서 신청하면 문자 전송 안내로 넘어감
+
 ## 미완료 · 확인 필요 (우선순위 순)
 1. **정식 주소 결정** — inpe.kr/hospital/ (기본값) 또는 별도 도메인. 바꾸면 build.py `SITE` 수정 후 재빌드. 별도 도메인이면 robots.txt가 루트에 가야 함
 2. **Apps Script 배포 후 `config.js`에 URL 입력** — 인프케어와 다른 시트로. 안 하면 신청이 저장되지 않음(문자 폴백만 동작)

@@ -2,6 +2,9 @@
 
 병원·의원·요양병원·산후조리원 정기청소, 병상 매트리스·대기실 소파 전문 케어, 바닥 청소·코팅 — 주식회사 인프
 
+- 정식 주소(예정): https://inpe.kr/hospital/
+- 미리보기(GitHub Pages): https://zzangusz-art.github.io/inpe-hospital/ (검색 제외 처리)
+
 ## 구조
 - `*.html` — 빌드 결과물 (직접 수정하지 말고 `_build/`에서 수정 후 `python _build/build.py`)
 - `assets/` — css · js · 이미지 · 15초 쇼릴 영상
