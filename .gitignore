@@ -1,0 +1,11 @@
+# 영상 렌더 도구 의존성 · 폰트 · 미리보기
+_reel/node_modules/
+_reel/package-lock.json
+_reel/*.ttf
+_reel/stills/
+# 로컬 점검 산출물
+_dev/shots/
+_dev/mock-leads.json
+.claude/
+Thumbs.db
+desktop.ini

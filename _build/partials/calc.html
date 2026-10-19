@@ -1,0 +1,51 @@
+<div class="calc">
+  <form class="calc__panel" id="calc" onsubmit="return false" aria-label="병원 청소 견적 계산기">
+    <div class="calc__group">
+      <label class="calc__label" for="calc-area">청소 면적 <small>외래 · 병동 · 로비 등 정기청소할 구역 합계</small></label>
+      <div class="cnum">
+        <input class="input num cnum__in" id="calc-area" name="area" inputmode="numeric" value="100" aria-describedby="calc-area-u"><span class="cnum__u" id="calc-area-u">평</span>
+        <input class="cnum__range" type="range" name="areaRange" min="10" max="1000" step="10" value="100" aria-label="청소 면적 슬라이더">
+      </div>
+    </div>
+    <div class="calc__group">
+      <span class="calc__label">1단계 · 정기청소 구성 <small>월 단위</small></span>
+      <div class="seg seg--grid">
+        <input type="radio" name="plan" id="cp-basic" value="basic"><label for="cp-basic">기본형<small>평당 2,000원~</small></label>
+        <input type="radio" name="plan" id="cp-std" value="std" checked><label for="cp-std">표준형<small>평당 3,500원~</small></label>
+        <input type="radio" name="plan" id="cp-full" value="full"><label for="cp-full">풀패키지<small>평당 5,000원</small></label>
+        <input type="radio" name="plan" id="cp-none" value="none"><label for="cp-none">안 함<small>건별 작업만</small></label>
+      </div>
+      <p class="calc__fine" id="calc-plan-desc">표준형: 바닥 쓸기 · 닦기, 분리수거, 가구 먼지 + 소파 · 매트리스 건식청소, 얼룩 제거</p>
+    </div>
+    <div class="calc__group">
+      <span class="calc__label">2단계 · 바닥 청소 <small>1회 기준</small></span>
+      <div class="seg seg--grid">
+        <input type="radio" name="floor" id="cf-none" value="none" checked><label for="cf-none">포함 안 함<small>&nbsp;</small></label>
+        <input type="radio" name="floor" id="cf-tile" value="tile"><label for="cf-tile">타일 청소<small>평당 8,000원</small></label>
+        <input type="radio" name="floor" id="cf-carpet" value="carpet"><label for="cf-carpet">카펫 청소<small>평당 8,000원</small></label>
+        <input type="radio" name="floor" id="cf-coat" value="coat"><label for="cf-coat">청소 + 코팅<small>평당 10,000원</small></label>
+      </div>
+      <div class="cnum cnum--sm" data-floor-area hidden>
+        <label class="cnum__lbl" for="calc-farea">바닥 작업 면적</label>
+        <input class="input num cnum__in" id="calc-farea" name="farea" inputmode="numeric" value="50"><span class="cnum__u">평</span>
+      </div>
+    </div>
+    <div class="calc__group">
+      <span class="calc__label">3단계 · 패브릭 전문 케어 <small>습건식 + 스팀, 1회 기준</small></span>
+      <div class="cqty">
+        <div class="cqty__row"><span><b>입원실 매트리스</b><small>싱글 기준 60,000원</small></span><span class="stepper"><button type="button" data-step="-1" data-for="mattress" aria-label="매트리스 수 줄이기">−</button><input class="num" name="mattress" inputmode="numeric" value="10" aria-label="매트리스 수"><button type="button" data-step="1" data-for="mattress" aria-label="매트리스 수 늘리기">+</button></span></div>
+        <div class="cqty__row"><span><b>대기실 소파</b><small>3인용 기준 80,000원</small></span><span class="stepper"><button type="button" data-step="-1" data-for="sofa" aria-label="소파 수 줄이기">−</button><input class="num" name="sofa" inputmode="numeric" value="2" aria-label="소파 수"><button type="button" data-step="1" data-for="sofa" aria-label="소파 수 늘리기">+</button></span></div>
+      </div>
+      <p class="calc__fine">정기청소를 계약하면 패브릭 케어는 20% 할인됩니다. 인승 · 사이즈가 다르면 금액이 달라집니다(<a class="accent" href="price.html#tables">사이즈별 요금</a>).</p>
+    </div>
+  </form>
+  <aside class="calc__result" aria-live="polite">
+    <span class="eyebrow">첫 달 예상 금액</span>
+    <p class="calc__total"><b class="num" id="calc-total">0</b><span>원</span></p>
+    <ul class="calc__lines" id="calc-lines"></ul>
+    <div class="calc__year"><span>연간 예상<small>정기청소 12개월 + 바닥 · 패브릭 각 1회</small></span><b class="num" id="calc-year">0원</b></div>
+    <p class="calc__hint" id="calc-hint" hidden><svg class="ico"><use href="#i-info"/></svg><span>규모가 큰 기관은 구역마다 작업 범위와 단가를 따로 정합니다. 이 금액은 전체를 같은 구성으로 넣었을 때의 계산이라, 실측 때 구역별로 다시 계산해 드립니다.</span></p>
+    <button class="btn btn--primary btn--lg btn--block" type="button" id="calc-go">이 조건으로 실측 신청</button>
+    <p class="calc__note">부가세 별도 참고 단가로 계산한 금액입니다. 오염도 · 작업 시간대 · 병동 구조에 따라 달라지며, 현장 실측 후 구역별로 확정합니다.</p>
+  </aside>
+</div>

@@ -1,0 +1,118 @@
+<main id="main">
+<section class="page-hero">
+  <div class="page-hero__bg"><img src="assets/img/real/sofa-04.jpg" alt=""></div>
+  <div class="wrap">
+    <ol class="crumbs" aria-label="현재 위치"><li><a href="index.html">홈</a></li><li>요금 · 견적</li></ol>
+    <h1>병원 청소 요금표와<br>견적 계산기</h1>
+    <p>정기청소 평당 2,000~5,000원(월), 바닥 청소 평당 8,000원부터, 입원실 매트리스 60,000원, 대기실 소파 80,000원. 모두 부가세 별도 참고 단가이고 현장 실측 후 구역별로 확정합니다.</p>
+  </div>
+</section>
+
+<section class="sec" id="calculator">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">견적 계산</span><h2 class="h-1">우리 기관 조건으로 계산하기</h2><p class="lead">계산한 조건은 실측 신청서에 그대로 담깁니다.</p></div>
+    {{calc}}
+  </div>
+</section>
+
+<section class="sec sec--white" id="regular">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">1단계</span><h2 class="h-1">정기청소 구성별 포함 범위</h2><p class="lead">단가 차이는 포함 범위 차이입니다. 구역마다 다른 구성을 넣을 수 있습니다.</p></div>
+    <table class="ptable">
+      <caption>정기청소 · 월 단위 · 부가세 별도</caption>
+      <thead><tr><th>포함 작업</th><th>기본형<br><small>평당 2,000원~</small></th><th>표준형<br><small>평당 3,500원~</small></th><th>풀패키지<br><small>평당 5,000원</small></th></tr></thead>
+      <tbody>
+        <tr><td>바닥 쓸기 · 닦기</td><td>●</td><td>●</td><td>●</td></tr>
+        <tr><td>분리수거 (일반 · 재활용)</td><td>●</td><td>●</td><td>●</td></tr>
+        <tr><td>가구 · 진료 집기 · 안내 데스크 먼지 제거</td><td>●</td><td>●</td><td>●</td></tr>
+        <tr><td>소파 · 입원실 매트리스 건식청소</td><td>–</td><td>●</td><td>●</td></tr>
+        <tr><td>얼룩 제거</td><td>–</td><td>●</td><td>●</td></tr>
+        <tr><td>탈취 시공</td><td>–</td><td>–</td><td>●</td></tr>
+        <tr><td>월 1회 방역 · 방역 완료 증명서</td><td>–</td><td>–</td><td class="hl">●</td></tr>
+      </tbody>
+    </table>
+    <div class="tables tables--2" style="margin-top:20px">
+      <table class="ptable">
+        <caption>권장 주기</caption>
+        <thead><tr><th>기관</th><th>정기청소</th></tr></thead>
+        <tbody>
+          <tr><td>외래 중심 의원 · 클리닉</td><td>주 1~2회</td></tr>
+          <tr><td>입원 병동이 있는 병원</td><td>주 2~3회</td></tr>
+          <tr><td>산후조리원</td><td>주 2~3회 + 매트리스 건식 매회</td></tr>
+        </tbody>
+      </table>
+      <div class="card"><svg class="ico"><use href="#i-info"/></svg><h3>의료폐기물은 다루지 않습니다</h3><p>분리수거는 일반 · 재활용 폐기물만 해당합니다. 의료폐기물은 원내 담당 부서의 절차를 따르며, 인프 작업자는 원내 분류 기준에 맞춰 일반 폐기물만 배출합니다.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="tables">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">2단계 · 3단계</span><h2 class="h-1">바닥 · 패브릭 요금</h2><p class="lead">바닥은 평당, 패브릭은 수량당입니다. 정기청소 계약 기관은 패브릭 케어가 20% 할인됩니다.</p></div>
+    <div class="tables">
+      <table class="ptable">
+        <caption>바닥 청소 · 1회</caption>
+        <thead><tr><th>구분</th><th>평당</th></tr></thead>
+        <tbody>
+          <tr><td>타일 청소</td><td>8,000원</td></tr>
+          <tr><td>카펫 청소</td><td>8,000원</td></tr>
+          <tr><td>타일 청소 + 코팅</td><td class="hl">10,000원</td></tr>
+          <tr><td>폴리싱 · 왁싱</td><td>상태별 협의</td></tr>
+          <tr><td>에폭시 · 데코타일 · 장판 · 마루</td><td>실측 후 안내</td></tr>
+        </tbody>
+      </table>
+      <table class="ptable">
+        <caption>소독 · 방역</caption>
+        <thead><tr><th>구분</th><th>금액</th></tr></thead>
+        <tbody>
+          <tr><td>소독 · 방역 시공 1회</td><td>149,000원~</td></tr>
+          <tr><td>월 정기 방역</td><td>99,000원</td></tr>
+          <tr><td>정기청소 풀패키지</td><td class="hl">월 1회 방역 포함</td></tr>
+        </tbody>
+      </table>
+      <table class="ptable">
+        <caption>매트리스</caption>
+        <thead><tr><th>사이즈</th><th>건식</th><th>습건식 + 스팀</th></tr></thead>
+        <tbody>
+          <tr><td>싱글</td><td>30,000원</td><td class="hl">60,000원</td></tr>
+          <tr><td>슈퍼싱글</td><td>30,000원</td><td>70,000원</td></tr>
+          <tr><td>퀸</td><td>40,000원</td><td>80,000원</td></tr>
+          <tr><td>킹</td><td>50,000원</td><td>90,000원</td></tr>
+          <tr><td>라지킹</td><td>60,000원</td><td>100,000원</td></tr>
+          <tr><td>유아용</td><td>20,000원</td><td>50,000원</td></tr>
+        </tbody>
+      </table>
+      <table class="ptable">
+        <caption>소파 <small class="muted" style="font-weight:500;font-size:13px">패브릭 기준</small></caption>
+        <thead><tr><th>사이즈</th><th>건식</th><th>습건식 + 스팀</th></tr></thead>
+        <tbody>
+          <tr><td>1인용</td><td>20,000원</td><td>40,000원</td></tr>
+          <tr><td>2인용</td><td>30,000원</td><td>70,000원</td></tr>
+          <tr><td>3인용</td><td>40,000원</td><td class="hl">80,000원</td></tr>
+          <tr><td>4인용</td><td>50,000원</td><td>90,000원</td></tr>
+          <tr><td>5인용</td><td>60,000원</td><td>110,000원</td></tr>
+          <tr><td>6인용</td><td>70,000원</td><td>130,000원</td></tr>
+          <tr><td>7인용 이상 · 가죽</td><td colspan="2">현장 확인 후 안내</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note" style="margin-top:20px"><svg class="ico"><use href="#i-info"/></svg><span>모든 금액은 부가세 별도 참고 단가입니다. 면적 · 오염도 · 작업 시간대 · 병동 구조에 따라 현장 실측 후 확정하며, 세금계산서를 발행합니다.</span></p>
+  </div>
+</section>
+
+<section class="sec sec--white" id="faq">
+  <div class="wrap" style="max-width:980px">
+    <div class="sec-head"><h2 class="h-1">요금 관련 질문</h2></div>
+    <div class="acc" data-single>{{faq_price}}</div>
+  </div>
+</section>
+
+<section class="sec sec--tight">
+  <div class="wrap">
+    <div class="cta-band">
+      <div><h2>실측은 무료입니다</h2><p>견적을 받으셔도 계약 의무는 없습니다. 실측 다음 날 구역별 단가와 작업 시간대를 문서로 드립니다.</p></div>
+      <div class="cta-band__act"><button class="btn btn--white btn--lg" type="button" data-open="drawer-quote">무료 실측 신청</button><a class="btn btn--line-w btn--lg" href="tel:050713145792" data-where="cta-price">전화 상담</a></div>
+    </div>
+  </div>
+</section>
+</main>

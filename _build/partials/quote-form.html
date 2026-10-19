@@ -1,0 +1,140 @@
+<form class="qform" data-form="{{fid}}" novalidate aria-label="무료 실측·견적 신청서">
+  <ol class="qform__steps" aria-hidden="true"><li>기관 · 서비스</li><li>규모</li><li>위치 · 시간대</li><li>담당자</li></ol>
+
+  <fieldset class="qstep" data-need="items" style="border:0;padding:0;margin:0">
+    <h3>어떤 기관인가요?</h3>
+    <div class="field">
+      <span class="label">기관 유형</span>
+      <div class="seg">
+        <input type="radio" name="orgType" id="{{fid}}-o1" value="병원(입원 병동)" checked><label for="{{fid}}-o1">병원 (입원 병동)</label>
+        <input type="radio" name="orgType" id="{{fid}}-o2" value="의원·클리닉(외래)"><label for="{{fid}}-o2">의원 · 클리닉</label>
+        <input type="radio" name="orgType" id="{{fid}}-o3" value="요양병원·요양원"><label for="{{fid}}-o3">요양병원 · 요양원</label>
+        <input type="radio" name="orgType" id="{{fid}}-o4" value="산후조리원"><label for="{{fid}}-o4">산후조리원</label>
+        <input type="radio" name="orgType" id="{{fid}}-o5" value="치과·한의원"><label for="{{fid}}-o5">치과 · 한의원</label>
+        <input type="radio" name="orgType" id="{{fid}}-o6" value="기타 의료·돌봄 시설"><label for="{{fid}}-o6">기타</label>
+      </div>
+    </div>
+    <div class="field">
+      <span class="label">필요한 서비스 <em>*</em> <small class="muted">(여러 개 선택 가능)</small></span>
+      <div class="seg">
+        <input type="checkbox" name="items" id="{{fid}}-i1" value="정기청소"><label for="{{fid}}-i1">정기청소</label>
+        <input type="checkbox" name="items" id="{{fid}}-i2" value="바닥 청소·코팅"><label for="{{fid}}-i2">바닥 청소 · 코팅</label>
+        <input type="checkbox" name="items" id="{{fid}}-i3" value="매트리스·소파 케어"><label for="{{fid}}-i3">매트리스 · 소파 케어</label>
+        <input type="checkbox" name="items" id="{{fid}}-i4" value="소독·방역"><label for="{{fid}}-i4">소독 · 방역</label>
+        <input type="checkbox" name="items" id="{{fid}}-i5" value="실측 후 제안 희망"><label for="{{fid}}-i5">잘 모르겠어요 (실측 후 제안)</label>
+      </div>
+      <p class="field__err">필요한 서비스를 하나 이상 선택해 주세요.</p>
+    </div>
+  </fieldset>
+
+  <fieldset class="qstep" style="border:0;padding:0;margin:0" hidden>
+    <h3>규모를 알려주세요 <small class="muted" style="font-size:14px;font-weight:500">대략이면 충분합니다</small></h3>
+    <div class="row3">
+      <div class="field">
+        <label for="{{fid}}-py">청소 면적 (평)</label>
+        <input class="input num" id="{{fid}}-py" name="sizePy" inputmode="numeric" placeholder="예) 150">
+      </div>
+      <div class="field">
+        <label for="{{fid}}-beds">병상 · 매트리스 수</label>
+        <input class="input num" id="{{fid}}-beds" name="beds" inputmode="numeric" placeholder="예) 40">
+      </div>
+      <div class="field">
+        <label for="{{fid}}-sofas">대기실 소파 수</label>
+        <input class="input num" id="{{fid}}-sofas" name="sofas" inputmode="numeric" placeholder="예) 6">
+      </div>
+    </div>
+    <div class="field">
+      <span class="label">바닥 소재 <small class="muted">(아는 것만)</small></span>
+      <div class="seg">
+        <input type="checkbox" name="floor" id="{{fid}}-f1" value="타일"><label for="{{fid}}-f1">타일</label>
+        <input type="checkbox" name="floor" id="{{fid}}-f2" value="데코타일·장판"><label for="{{fid}}-f2">데코타일 · 장판</label>
+        <input type="checkbox" name="floor" id="{{fid}}-f3" value="에폭시"><label for="{{fid}}-f3">에폭시</label>
+        <input type="checkbox" name="floor" id="{{fid}}-f4" value="카펫"><label for="{{fid}}-f4">카펫</label>
+        <input type="checkbox" name="floor" id="{{fid}}-f5" value="마루"><label for="{{fid}}-f5">마루</label>
+      </div>
+    </div>
+    <div class="field">
+      <label for="{{fid}}-detail">가장 신경 쓰이는 곳 · 요청 사항</label>
+      <textarea class="textarea" id="{{fid}}-detail" name="detail" placeholder="예) 3층 병동 매트리스 냄새, 로비 데코타일 광택이 다 벗겨짐. 상주 미화 2명 있음"></textarea>
+    </div>
+    <div class="field upl">
+      <span class="label">현장 사진 <small class="muted">(선택 · 최대 3장)</small></span>
+      <label class="upl__drop" for="{{fid}}-file">
+        <svg class="ico"><use href="#i-camera"/></svg>
+        <span><b>얼룩 · 바닥 상태 사진을 올려주세요</b><small>사진이 있으면 실측 전에 공정을 미리 잡습니다. 용량은 자동으로 줄여서 보냅니다.</small></span>
+      </label>
+      <input class="sr-only" type="file" id="{{fid}}-file" accept="image/*" multiple>
+      <div class="upl__list"></div>
+    </div>
+  </fieldset>
+
+  <fieldset class="qstep" data-need="region" style="border:0;padding:0;margin:0" hidden>
+    <h3>어디서, 언제 작업할 수 있나요?</h3>
+    <div class="row2">
+      <div class="field">
+        <label for="{{fid}}-region">지역 <em>*</em></label>
+        <select class="select" id="{{fid}}-region" name="region">
+          <option value="">선택해 주세요</option>
+          <option>서울</option><option>인천</option><option>경기</option><option>기타 지역</option>
+        </select>
+        <p class="field__err">지역을 선택해 주세요.</p>
+      </div>
+      <div class="field">
+        <label for="{{fid}}-area">시 · 구 · 동</label>
+        <input class="input" id="{{fid}}-area" name="area" placeholder="예) 남동구 구월동" autocomplete="address-level2">
+      </div>
+    </div>
+    <div class="field">
+      <span class="label">작업 가능한 시간대 <small class="muted">(여러 개 선택 가능)</small></span>
+      <div class="seg">
+        <input type="checkbox" name="slot" id="{{fid}}-s1" value="평일 진료 종료 후"><label for="{{fid}}-s1">평일 진료 종료 후</label>
+        <input type="checkbox" name="slot" id="{{fid}}-s2" value="토요일 오후"><label for="{{fid}}-s2">토요일 오후</label>
+        <input type="checkbox" name="slot" id="{{fid}}-s3" value="일요일·휴진일"><label for="{{fid}}-s3">일요일 · 휴진일</label>
+        <input type="checkbox" name="slot" id="{{fid}}-s4" value="진료 중 일부 구역 가능"><label for="{{fid}}-s4">진료 중 일부 구역 가능</label>
+      </div>
+    </div>
+    <div class="field" style="max-width:320px">
+      <label for="{{fid}}-date">실측 희망일</label>
+      <input class="input" type="date" id="{{fid}}-date" name="date">
+    </div>
+    <p class="note"><svg class="ico"><use href="#i-pin"/></svg><span>수도권은 실측과 출장이 무료입니다. 실측 후 견적을 받으셔도 계약 의무는 없습니다.</span></p>
+  </fieldset>
+
+  <fieldset class="qstep" data-need="contact" style="border:0;padding:0;margin:0" hidden>
+    <h3>담당자 연락처를 남겨주세요</h3>
+    <div class="field">
+      <label for="{{fid}}-org">기관명 <em>*</em></label>
+      <input class="input" id="{{fid}}-org" name="org" autocomplete="organization" placeholder="예) ○○병원 / ○○산후조리원">
+      <p class="field__err">기관명을 입력해 주세요.</p>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="{{fid}}-name">담당자 성함 <em>*</em></label>
+        <input class="input" id="{{fid}}-name" name="name" autocomplete="name" placeholder="홍길동 (총무팀)">
+        <p class="field__err">성함을 2자 이상 입력해 주세요.</p>
+      </div>
+      <div class="field">
+        <label for="{{fid}}-phone">연락처 <em>*</em></label>
+        <input class="input num" id="{{fid}}-phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000">
+        <p class="field__err">연락 가능한 번호를 정확히 입력해 주세요.</p>
+      </div>
+    </div>
+    <div class="field">
+      <label for="{{fid}}-email">이메일 <small class="muted">(견적서 받을 주소, 선택)</small></label>
+      <input class="input" id="{{fid}}-email" name="email" type="email" autocomplete="email" placeholder="name@hospital.co.kr">
+      <p class="field__err">이메일 주소 형식을 확인해 주세요.</p>
+    </div>
+    <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <div class="qform__summary" aria-live="polite"></div>
+    <div class="field">
+      <div class="consent"><input type="checkbox" name="agree" id="{{fid}}-agree"><label for="{{fid}}-agree">[필수] 견적 상담을 위한 개인정보(기관명 · 담당자 성함 · 연락처 · 이메일 · 사진) 수집 · 이용에 동의합니다. 상담 종료 후 1년 보관 뒤 파기합니다.</label><button type="button" data-open="modal-privacy">자세히</button></div>
+      <p class="field__err">개인정보 수집·이용에 동의해 주세요.</p>
+    </div>
+  </fieldset>
+
+  <div class="qform__nav">
+    <button class="btn btn--ghost" type="button" data-prev hidden>이전</button>
+    <button class="btn btn--primary" type="button" data-next>다음</button>
+    <button class="btn btn--primary" type="submit" data-send hidden>무료 실측 신청하기</button>
+  </div>
+</form>
